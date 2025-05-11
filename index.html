@@ -4,8 +4,8 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 
-    <title>Web-LLM Chat</title>
-    <meta name="description" content="A Web-LLM chat application with model and version selection.">
+    <title>Web-LLM Chat (MLCEngine)</title>
+    <meta name="description" content="A Web-LLM chat application using the MLCEngine API.">
     <link rel="manifest" href="manifest.json">
 
     <!-- iOS Meta Tags -->
@@ -18,36 +18,29 @@
     <meta name="theme-color" content="#222222"> <!-- Default dark theme -->
 
     <link rel="stylesheet" href="style.css">
-    <!-- WebLLM script will be loaded dynamically by script.js -->
 </head>
 <body>
     <div class="app-container">
         <header>
-            <h1>Web-LLM Chat</h1>
+            <h1>Web-LLM Chat (MLCEngine)</h1>
             <button id="theme-toggle">Toggle Theme</button>
         </header>
 
         <div class="settings-area">
             <h2>Settings</h2>
             <div>
-                <label for="webllm-version-select">WebLLM Version:</label>
-                <select id="webllm-version-select">
-                    <!-- Options will be populated by JS -->
-                </select>
-            </div>
-            <div>
                 <label for="model-select">Select LLM Model:</label>
                 <select id="model-select">
                     <!-- Options will be populated by JS -->
                 </select>
             </div>
-            <button id="apply-settings-button">Apply & Reload Engine</button>
+            <button id="load-model-button">Load Selected Model</button>
             <p id="current-settings-display"></p>
         </div>
 
         <main class="chat-area">
             <div id="chat-messages">
-                <div id="llm-status" class="status-message">Select settings and click "Apply & Reload Engine" to load a model.</div>
+                <div id="llm-status" class="status-message">Select a model and click "Load Selected Model".</div>
                 <!-- Chat messages will be appended here -->
             </div>
             <div class="chat-input-area">
@@ -63,9 +56,11 @@
                 <!-- Log messages will be appended here -->
             </div>
             <button id="clear-log-button">Clear Log</button>
+            <div id="chat-stats" class="status-message hidden"></div>
         </footer>
     </div>
 
-    <script src="script.js"></script>
+    <!-- Script must be type="module" for top-level import -->
+    <script type="module" src="script.js"></script>
 </body>
 </html>
