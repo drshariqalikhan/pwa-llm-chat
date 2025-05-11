@@ -4,22 +4,19 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 
-    <!-- PWA & iOS Specific Meta Tags -->
     <title>Web-LLM Chat</title>
-    <meta name="description" content="A bare-bones Web-LLM chat application">
+    <meta name="description" content="A Web-LLM chat application">
     <link rel="manifest" href="manifest.json">
 
-    <!-- iOS Meta Tags -->
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="apple-mobile-web-app-title" content="LLM Chat">
-    <link rel="apple-touch-icon" sizes="180x180" href="icons/icon-180x180.png">
-    <!-- Add more apple-touch-icon sizes if needed -->
+    <link rel="apple-touch-icon" href="icons/icon-180x180.png">
 
-    <!-- Theme Color for browser UI -->
-    <meta name="theme-color" content="#222222"> <!-- Default dark theme -->
+    <meta name="theme-color" content="#222222">
 
     <link rel="stylesheet" href="style.css">
+    <!-- WebLLM script will be loaded dynamically by script.js -->
 </head>
 <body>
     <div class="app-container">
@@ -28,22 +25,38 @@
             <button id="theme-toggle">Toggle Theme</button>
         </header>
 
+        <div class="settings-area">
+            <h2>Settings</h2>
+            <div>
+                <label for="webllm-version-select">WebLLM Version:</label>
+                <select id="webllm-version-select">
+                    <!-- Options will be populated by JS -->
+                </select>
+            </div>
+            <div>
+                <label for="model-select">Select LLM Model:</label>
+                <select id="model-select">
+                    <!-- Options will be populated by JS -->
+                </select>
+            </div>
+            <button id="apply-settings-button">Apply & Reload Engine</button>
+            <p id="current-settings-display"></p>
+        </div>
+
         <main class="chat-area">
             <div id="chat-messages">
-                <!-- Chat messages will be appended here -->
+                <div id="llm-status" class="status-message">Select settings and apply to load model.</div>
             </div>
             <div class="chat-input-area">
-                <textarea id="message-input" placeholder="Type your message or use voice..." rows="2"></textarea>
-                <button id="send-button">Send</button>
+                <textarea id="message-input" placeholder="Type your message..." rows="2" disabled></textarea>
+                <button id="send-button" disabled>Send</button>
                 <button id="voice-button" title="Voice Input (Future)">🎤</button>
             </div>
         </main>
 
         <footer>
             <h2>Event & Error Log</h2>
-            <div id="log-container">
-                <!-- Log messages will be appended here -->
-            </div>
+            <div id="log-container"></div>
             <button id="clear-log-button">Clear Log</button>
         </footer>
     </div>
