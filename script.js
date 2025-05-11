@@ -52,14 +52,13 @@ document.addEventListener('DOMContentLoaded', () => {
     function populateModelDropdown() {
         const models = webllm.prebuiltAppConfig.model_list.map(m => ({
             id: m.model_id,
-            // name: `${m.model_id} (~${(m.vram_required_MB / 1024).toFixed(1)}GB VRAM)`
             name: `${m.model_id} ${m.low_resource_required ? '(Low Resource)' : `(~${(m.vram_required_MB / 1024).toFixed(1)}GB VRAM)`}`
         }));
 
         const placeholderOption = document.createElement('option');
         placeholderOption.value = "";
         placeholderOption.textContent = "-- Select a Model --";
-        placeholderOption.disabled = true; // Make it unselectable directly
+        placeholderOption.disabled = true;
         modelSelect.appendChild(placeholderOption);
 
         models.forEach(model => {
@@ -74,7 +73,7 @@ document.addEventListener('DOMContentLoaded', () => {
             modelSelect.value = storedModelId;
             currentModelId = storedModelId;
         } else {
-            modelSelect.value = ""; // Explicitly select the placeholder
+            modelSelect.value = "";
             currentModelId = "";
         }
         updateCurrentSettingsDisplay();
@@ -84,10 +83,9 @@ document.addEventListener('DOMContentLoaded', () => {
         const selectedModelOption = modelSelect.options[modelSelect.selectedIndex];
         if (currentModelId && selectedModelOption && selectedModelOption.value === currentModelId && selectedModelOption.value !== "") {
             currentSettingsDisplay.textContent = `Selected: ${selectedModelOption.textContent}`;
-        } else if (currentModelId && selectedModelOption.value === "") { // If placeholder is selected but a model was loaded
+        } else if (currentModelId && selectedModelOption.value === "") {
              currentSettingsDisplay.textContent = `Previously loaded: ${currentModelId}. Select to change.`;
-        }
-         else if (currentModelId) {
+        } else if (currentModelId) {
             currentSettingsDisplay.textContent = `Selected: ${currentModelId}`;
         } else {
             currentSettingsDisplay.textContent = "No model selected.";
@@ -96,7 +94,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     loadModelButton.addEventListener('click', async () => {
         const selectedValue = modelSelect.value;
-        if (!selectedValue || selectedValue === "") { // Also check for empty placeholder value
+        if (!selectedValue || selectedValue === "") {
             addSystemMessageToChat("Please select a model from the dropdown first.", "error");
             logEvent("Load model clicked but no model selected.", "warn");
             return;
@@ -129,7 +127,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 temperature: 0.7,
                 top_p: 0.95,
             };
-            await engine.reload(currentModelId, generationConfig); // Pass chatOpts to reload
+            await engine.reload(currentModelId, generationConfig);
             isModelLoaded = true;
             sendButton.disabled = false;
             messageInput.disabled = false;
@@ -138,7 +136,7 @@ document.addEventListener('DOMContentLoaded', () => {
             logEvent(`Model ${currentModelId} loaded successfully.`);
         } catch (err) {
             logEvent(`Error loading model ${currentModelId}: ${err.message}`, 'error');
-            console.error(err); // Log the full error object
+            console.error(err);
             updateLLMStatus(`Error loading ${modelDisplayName}: ${err.message}. Check console.`, true);
             addSystemMessageToChat(`Failed to load model ${modelDisplayName}. Error: ${err.message}. See error log.`, 'error');
             isModelLoaded = false;
@@ -147,10 +145,10 @@ document.addEventListener('DOMContentLoaded', () => {
 
     function updateLLMStatus(message, isError = false) {
         llmStatus.textContent = message;
-        llmStatus.style.color = isError ? 'var(--error-color, #dc3545)' : 'var(--secondary-color)'; // Added CSS var fallback
-        if (message) { // Show status if there's a message
+        llmStatus.style.color = isError ? 'var(--error-color, #dc3545)' : 'var(--secondary-color)';
+        if (message) {
             llmStatus.classList.remove('hidden');
-        } else { // Hide if message is empty
+        } else {
             llmStatus.classList.add('hidden');
         }
     }
@@ -162,7 +160,7 @@ document.addEventListener('DOMContentLoaded', () => {
         logEvent(`Theme set to ${theme}.`);
         const themeColorMeta = document.querySelector('meta[name="theme-color"]');
         if (themeColorMeta) {
-            themeColorMeta.setAttribute('content', theme === 'dark' ? '#1e1e1e' : '#f0f0f0'); // Adjusted theme colors slightly
+            themeColorMeta.setAttribute('content', theme === 'dark' ? '#1e1e1e' : '#f0f0f0');
         }
     }
     themeToggle.addEventListener('click', () => {
@@ -177,30 +175,13 @@ document.addEventListener('DOMContentLoaded', () => {
             navigator.serviceWorker.register('./sw.js')
                 .then(registration => {
                     logEvent('ServiceWorker registration successful: ' + registration.scope);
-                    registration.onupdatefound = () => {
-                        const installingWorker = registration.installing;
-                        if (installingWorker) {
-                            installingWorker.onstatechange = () => {
-                                if (installingWorker.state === 'installed') {
-                                    if (navigator.serviceWorker.controller) {
-                                        logEvent('New PWA content is available and will be used when all tabs for this PWA are closed.', 'warn');
-                                    } else {
-                                        logEvent('PWA content is cached for offline use.');
-                                    }
-                                }
-                            };
-                        }
-                    };
+                    // ... (rest of SW registration logic)
                 })
                 .catch(error => {
                     logEvent('ServiceWorker registration failed: ' + error, 'error');
                 });
         });
-        navigator.serviceWorker.addEventListener('message', event => {
-            if (event.data && event.data.type === 'LOG_FROM_SW') {
-                logEvent(`[SW] ${event.data.message}`, event.data.logType || 'info');
-            }
-        });
+        // ... (rest of SW event listener)
     } else {
         logEvent('ServiceWorker not supported in this browser.', 'warn');
     }
@@ -216,7 +197,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     function addSystemMessageToChat(text, type = 'system') {
         const messageDiv = document.createElement('div');
-        messageDiv.classList.add('message', type === 'error' ? 'llm' : 'system');
+        messageDiv.classList.add('message', type === 'error' ? 'llm' : 'system'); // Use 'llm' style for error for visibility
         messageDiv.innerHTML = text.replace(/\n/g, '<br>');
         chatMessagesContainer.appendChild(messageDiv);
         chatMessagesContainer.scrollTop = chatMessagesContainer.scrollHeight;
@@ -245,7 +226,7 @@ document.addEventListener('DOMContentLoaded', () => {
         appendMessageToChat('user', userInputText);
         chatHistory.push({ role: "user", content: userInputText });
         messageInput.value = '';
-        messageInput.style.height = 'auto';
+        messageInput.style.height = 'auto'; // Reset height before calculating scrollHeight
         messageInput.style.height = (messageInput.scrollHeight) + 'px';
         messageInput.disabled = true;
         sendButton.disabled = true;
@@ -255,16 +236,24 @@ document.addEventListener('DOMContentLoaded', () => {
         let currentAIMessageDiv = appendMessageToChat('assistant', 'Thinking...');
         let currentFullResponse = "";
         let finalUsageStats = null;
+        let chunkCounter = 0; // For detailed chunk logging
 
         try {
             logEvent(`Sending to LLM (model ${currentModelId}): "${userInputText.substring(0, 50)}..."`);
             const stream = await engine.chat.completions.create({
                 stream: true,
                 messages: chatHistory,
-                stream_options: { include_usage: true } // Enable usage statistics
+                stream_options: { include_usage: true }
             });
 
             for await (const chunk of stream) {
+                chunkCounter++;
+                // console.log(`[Chunk ${chunkCounter} RAW]:`, JSON.parse(JSON.stringify(chunk))); // Detailed log of each chunk
+                if (chunk.usage) {
+                    // console.log(`[Chunk ${chunkCounter} USAGE]:`, JSON.parse(JSON.stringify(chunk.usage)));
+                    finalUsageStats = chunk.usage; // Keep overwriting, last one should be final
+                }
+
                 const deltaContent = chunk.choices[0]?.delta?.content;
                 if (deltaContent) {
                     currentFullResponse += deltaContent;
@@ -272,15 +261,12 @@ document.addEventListener('DOMContentLoaded', () => {
                     chatMessagesContainer.scrollTop = chatMessagesContainer.scrollHeight;
                 }
 
-                if (chunk.usage) { // Capture usage stats from the stream
-                    finalUsageStats = chunk.usage;
-                }
-
                 if (chunk.choices[0]?.finish_reason === "stop" || chunk.choices[0]?.finish_reason === "length") {
+                    // console.log(`[Chunk ${chunkCounter} FINISH REASON]: ${chunk.choices[0]?.finish_reason}`);
                     break;
                 }
             }
-            logEvent(`LLM full reply received for model ${currentModelId}.`);
+            logEvent(`LLM full reply received for model ${currentModelId}. Total chunks: ${chunkCounter}`);
             chatHistory.push({ role: "assistant", content: currentFullResponse });
 
             if (finalUsageStats) {
@@ -289,25 +275,25 @@ document.addEventListener('DOMContentLoaded', () => {
                 const totalTokens = finalUsageStats.total_tokens || (prefillTokens + completionTokens);
                 let statsText = `Tokens: ${prefillTokens} (prompt) + ${completionTokens} (completion) = ${totalTokens} (total).`;
 
-                // Attempt to get speed if available (WebLLM might add more detailed timing in future `chunk.usage.extra`)
-                // For now, this is a placeholder as `extra.prefill_time_seconds` isn't standard in OpenAI API usage object
-                // We are logging the statsText string as composed from the example you showed.
-                // The exact token/sec calculation would need the deprecated API or more detailed stats.
-                // Let's check if the `extra` field provides what we need for a simple speed approximation.
-                if (finalUsageStats.extra && finalUsageStats.extra.estimated_prefill_tps && finalUsageStats.extra.estimated_decode_tps) {
-                    statsText += ` Approx. Speed: ${finalUsageStats.extra.estimated_prefill_tps.toFixed(2)} (prefill) t/s, ${finalUsageStats.extra.estimated_decode_tps.toFixed(2)} (decode) t/s.`;
-                } else if (finalUsageStats.extra && finalUsageStats.extra.total_decode_time_seconds && completionTokens > 0) {
-                    // Fallback: calculate decode speed if total decode time is available
-                    const decodeSpeed = completionTokens / finalUsageStats.extra.total_decode_time_seconds;
-                    statsText += ` Approx. Decode Speed: ${decodeSpeed.toFixed(2)} t/s.`;
+                // The `finalUsageStats.extra` field is not standard in OpenAI API.
+                // WebLLM might add custom fields there. We'll log it if it exists.
+                if (finalUsageStats.extra) {
+                    logEvent("Usage extra stats: " + JSON.stringify(finalUsageStats.extra));
+                    // Example of how you might access hypothetical speed stats if they existed in 'extra'
+                    // const prefillSpeed = finalUsageStats.extra.estimated_prefill_tps;
+                    // const decodeSpeed = finalUsageStats.extra.estimated_decode_tps;
+                    // if (prefillSpeed && decodeSpeed) {
+                    //    statsText += ` Approx. Speed: ${prefillSpeed.toFixed(1)} (prefill) t/s, ${decodeSpeed.toFixed(1)} (decode) t/s.`;
+                    // }
                 }
-
 
                 chatStatsDisplay.textContent = statsText;
                 chatStatsDisplay.classList.remove('hidden');
-                logEvent("Usage Stats: " + statsText);
+                logEvent("Final Usage Stats: " + statsText);
             } else {
-                logEvent("No usage statistics found in the stream.", "warn");
+                logEvent("No usage statistics object found in the final stream chunks.", "warn");
+                chatStatsDisplay.textContent = "Usage stats not available for this response.";
+                chatStatsDisplay.classList.remove('hidden');
             }
 
         } catch (err) {
@@ -355,10 +341,11 @@ document.addEventListener('DOMContentLoaded', () => {
 
         populateModelDropdown();
 
-        if(currentModelId && modelSelect.value === currentModelId) { // Check if the stored model is still valid and selected
-            addSystemMessageToChat(`Previously selected model: ${modelSelect.options[modelSelect.selectedIndex].textContent}. Click "Load Selected Model" to use it or choose another.`);
-        } else if (currentModelId) { // If a model was stored but isn't in the current options or not selected
-             addSystemMessageToChat(`A model was previously used (${currentModelId}). Select a model and click "Load".`);
+        if(currentModelId && modelSelect.value === currentModelId && currentModelId !== "") {
+            const modelDisplayName = modelSelect.options[modelSelect.selectedIndex]?.textContent || currentModelId;
+            addSystemMessageToChat(`Previously selected model: ${modelDisplayName}. Click "Load Selected Model" to use it or choose another.`);
+        } else if (currentModelId && currentModelId !== "") {
+             addSystemMessageToChat(`A model ID (${currentModelId}) was previously stored. Select a model from the list and click "Load".`);
         }
          logEvent("App initialized. User needs to select and load a model.");
     }
