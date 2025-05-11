@@ -1,1 +1,31 @@
-
+{
+    "name": "Web-LLM Chat",
+    "short_name": "LLMChat",
+    "description": "A bare-bones Web-LLM chat application.",
+    "start_url": "./index.html",
+    "display": "standalone",
+    "scope": "./",
+    "background_color": "#1e1e1e",
+    "theme_color": "#222222",
+    "orientation": "portrait-primary",
+    "icons": [
+        {
+            "src": "icons/icon-192x192.png",
+            "type": "image/png",
+            "sizes": "192x192",
+            "purpose": "any maskable"
+        },
+        {
+            "src": "icons/icon-512x512.png",
+            "type": "image/png",
+            "sizes": "512x512",
+            "purpose": "any maskable"
+        },
+        {
+            "src": "icons/icon-180x180.png",
+            "type": "image/png",
+            "sizes": "180x180",
+            "purpose": "any"
+        }
+    ]
+}
