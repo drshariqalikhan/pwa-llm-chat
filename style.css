@@ -102,7 +102,7 @@ header h1 {
     color: var(--text-color);
 }
 
-#apply-settings-button {
+#load-model-button { /* Renamed from apply-settings-button */
     padding: 8px 12px;
     align-self: flex-start;
     background-color: var(--secondary-color);
@@ -112,7 +112,7 @@ header h1 {
     cursor: pointer;
     transition: background-color 0.2s;
 }
-#apply-settings-button:hover {
+#load-model-button:hover {
     opacity: 0.9;
 }
 
@@ -144,12 +144,17 @@ header h1 {
     color: var(--secondary-color);
     font-style: italic;
 }
+.hidden {
+    display: none !important;
+}
+
 
 .message {
     padding: 10px 15px;
     border-radius: 15px;
     max-width: 70%;
     word-wrap: break-word;
+    white-space: pre-wrap; /* To respect newlines from LLM */
 }
 
 .message.user {
@@ -163,6 +168,17 @@ header h1 {
     align-self: flex-start;
     border-bottom-left-radius: 5px;
 }
+/* System message style for non-chat info in chat area */
+.message.system {
+    background-color: var(--log-bg);
+    color: var(--secondary-color);
+    align-self: center;
+    font-size: 0.9em;
+    font-style: italic;
+    max-width: 80%;
+    text-align: center;
+}
+
 
 .chat-input-area {
     display: flex;
@@ -209,15 +225,16 @@ footer {
     padding: 10px;
     border-top: 1px solid var(--border-color);
     background-color: var(--log-bg);
-    max-height: 200px;
+    max-height: 200px; /* Adjusted for potential stats line */
     display: flex;
     flex-direction: column;
     flex-shrink: 0;
+    gap: 5px; /* Added gap for footer items */
 }
 
 footer h2 {
     font-size: 1em;
-    margin-bottom: 5px;
+    margin-bottom: 0; /* Adjusted margin */
 }
 
 #log-container {
@@ -230,6 +247,13 @@ footer h2 {
     border: 1px solid var(--border-color);
     border-radius: 3px;
     white-space: pre-wrap;
+    min-height: 50px; /* Ensure it's visible even if empty */
+}
+
+#chat-stats {
+    font-size: 0.75em;
+    text-align: right;
+    padding: 2px 5px;
 }
 
 .log-entry {
