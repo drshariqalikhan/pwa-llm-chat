@@ -1,4 +1,3 @@
-
 :root {
     --bg-color: #f0f0f0;
     --text-color: #333;
@@ -42,13 +41,13 @@ html, body {
     background-color: var(--bg-color);
     color: var(--text-color);
     transition: background-color 0.3s, color 0.3s;
-    overscroll-behavior-y: contain; /* Prevents pull-to-refresh on iOS when scrollable */
+    overscroll-behavior-y: contain;
 }
 
 .app-container {
     display: flex;
     flex-direction: column;
-    height: 100vh; /* Full viewport height */
+    height: 100vh;
     max-width: 800px;
     margin: 0 auto;
     border-left: 1px solid var(--border-color);
@@ -69,11 +68,65 @@ header h1 {
     font-size: 1.5em;
 }
 
+.settings-area {
+    padding: 10px 15px;
+    background-color: var(--header-bg);
+    border-bottom: 1px solid var(--border-color);
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    flex-shrink: 0;
+}
+
+.settings-area h2 {
+    font-size: 1.1em;
+    margin-bottom: 5px;
+}
+
+.settings-area div {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.settings-area label {
+    flex-shrink: 0;
+}
+
+.settings-area select {
+    flex-grow: 1;
+    padding: 5px;
+    border-radius: 3px;
+    border: 1px solid var(--border-color);
+    background-color: var(--input-bg);
+    color: var(--text-color);
+}
+
+#apply-settings-button {
+    padding: 8px 12px;
+    align-self: flex-start;
+    background-color: var(--secondary-color);
+    color: var(--button-text);
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    transition: background-color 0.2s;
+}
+#apply-settings-button:hover {
+    opacity: 0.9;
+}
+
+#current-settings-display {
+    font-size: 0.8em;
+    color: var(--secondary-color);
+    margin-top: 5px;
+}
+
 .chat-area {
     flex-grow: 1;
     display: flex;
     flex-direction: column;
-    overflow: hidden; /* Important for scrollable chat messages */
+    overflow: hidden;
 }
 
 #chat-messages {
@@ -83,6 +136,13 @@ header h1 {
     display: flex;
     flex-direction: column;
     gap: 10px;
+}
+
+.status-message {
+    text-align: center;
+    padding: 10px;
+    color: var(--secondary-color);
+    font-style: italic;
 }
 
 .message {
@@ -108,9 +168,9 @@ header h1 {
     display: flex;
     padding: 10px;
     border-top: 1px solid var(--border-color);
-    background-color: var(--header-bg); /* Similar to header */
+    background-color: var(--header-bg);
     gap: 10px;
-    align-items: flex-end; /* Align items to bottom for textarea growth */
+    align-items: flex-end;
     flex-shrink: 0;
 }
 
@@ -119,11 +179,11 @@ header h1 {
     padding: 10px;
     border: 1px solid var(--border-color);
     border-radius: 5px;
-    resize: none; /* Allow JS to handle height */
+    resize: none;
     font-size: 1em;
     background-color: var(--input-bg);
     color: var(--text-color);
-    max-height: 100px; /* Limit growth */
+    max-height: 100px;
 }
 
 #send-button, #voice-button, #theme-toggle, #clear-log-button {
@@ -142,14 +202,14 @@ header h1 {
 }
 
 #voice-button {
-    padding: 10px; /* Make it more square */
+    padding: 10px;
 }
 
 footer {
     padding: 10px;
     border-top: 1px solid var(--border-color);
     background-color: var(--log-bg);
-    max-height: 200px; /* Limit log height */
+    max-height: 200px;
     display: flex;
     flex-direction: column;
     flex-shrink: 0;
@@ -164,12 +224,12 @@ footer h2 {
     flex-grow: 1;
     overflow-y: auto;
     font-size: 0.8em;
-    background-color: var(--bg-color); /* Contrast with footer */
+    background-color: var(--bg-color);
     color: var(--text-color);
     padding: 5px;
     border: 1px solid var(--border-color);
     border-radius: 3px;
-    white-space: pre-wrap; /* Preserve line breaks */
+    white-space: pre-wrap;
 }
 
 .log-entry {
@@ -181,9 +241,4 @@ footer h2 {
 }
 .log-entry.error { color: #dc3545; }
 .log-entry.warn { color: #ffc107; }
-.log-entry.info { color: var(--text-color); } /* Adjust if needed for dark mode */
-
-#clear-log-button {
-    margin-top: 5px;
-    align-self: flex-end;
-}
+.log-entry.info { color: var(--text-color); }
