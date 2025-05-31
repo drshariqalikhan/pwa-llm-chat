@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+
+    <title>Web-LLM Chat (MLCEngine)</title>
+    <meta name="description" content="A Web-LLM chat application using the MLCEngine API.">
+    <link rel="manifest" href="manifest.json">
+
+    <!-- PWA Capability Meta Tags -->
+    <meta name="mobile-web-app-capable" content="yes"> <!-- Standard PWA meta tag -->
+    <meta name="apple-mobile-web-app-capable" content="yes"> <!-- For older iOS compatibility -->
+
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="LLM Chat">
+    <link rel="apple-touch-icon" href="icons/icon-180x180.png">
+
+    <!-- Theme Color for browser UI -->
+    <meta name="theme-color" content="#222222"> <!-- Default dark theme -->
+
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="app-container">
+        <header>
+            <h1>Web-LLM Chat (MLCEngine)</h1>
+            <button id="theme-toggle">Toggle Theme</button>
+        </header>
+
+        <div class="settings-area">
+            <h2>Settings</h2>
+            <div>
+                <label for="model-select">Select LLM Model:</label>
+                <select id="model-select">
+                    <!-- Options will be populated by JS -->
+                </select>
+            </div>
+            <button id="load-model-button">Load Selected Model</button>
+            <p id="current-settings-display"></p>
+        </div>
+
+        <main class="chat-area">
+            <div id="chat-messages">
+                <div id="llm-status" class="status-message">Select a model and click "Load Selected Model".</div>
+                <!-- Chat messages will be appended here -->
+            </div>
+            <div class="chat-input-area">
+                <textarea id="message-input" placeholder="Type your message..." rows="2" disabled></textarea>
+                <button id="send-button" disabled>Send</button>
+                <button id="voice-button" title="Voice Input (Future)">🎤</button>
+            </div>
+        </main>
+
+        <footer>
+            <h2>Event & Error Log</h2>
+            <div id="log-container">
+                <!-- Log messages will be appended here -->
+            </div>
+            <button id="clear-log-button">Clear Log</button>
+            <div id="chat-stats" class="status-message hidden"></div>
+        </footer>
+    </div>
+
+    <!-- Script must be type="module" for top-level import -->
+    <script type="module" src="script.js"></script>
+</body>
+</html>

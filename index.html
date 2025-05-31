@@ -3,66 +3,617 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <title>WebLLM Conflict Chat</title>
 
-    <title>Web-LLM Chat (MLCEngine)</title>
-    <meta name="description" content="A Web-LLM chat application using the MLCEngine API.">
-    <link rel="manifest" href="manifest.json">
-
-    <!-- PWA Capability Meta Tags -->
-    <meta name="mobile-web-app-capable" content="yes"> <!-- Standard PWA meta tag -->
-    <meta name="apple-mobile-web-app-capable" content="yes"> <!-- For older iOS compatibility -->
-
-    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <!-- PWA and iOS specific meta tags -->
+    <meta name="description" content="AI-powered conflict resolution chat using WebLLM, running in your browser.">
+    <meta name="theme-color" content="#4CAF50">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="default">
     <meta name="apple-mobile-web-app-title" content="LLM Chat">
-    <link rel="apple-touch-icon" href="icons/icon-180x180.png">
+    <!-- Icons and manifest will be added dynamically by script -->
 
-    <!-- Theme Color for browser UI -->
-    <meta name="theme-color" content="#222222"> <!-- Default dark theme -->
-
-    <link rel="stylesheet" href="style.css">
+    <style>
+        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol"; display: flex; flex-direction: column; align-items: center; padding: 20px; background-color: #f4f4f4; margin: 0; min-height: 100vh; box-sizing: border-box; }
+        #appContainer { width: 90%; max-width: 700px; background-color: #fff; border-radius: 8px; box-shadow: 0 0 10px rgba(0,0,0,0.1); padding: 20px; display: flex; flex-direction: column; }
+        h1 { font-size: 1.5em; text-align: center; color: #333; margin-top:0; }
+        #controls { display: flex; flex-wrap: wrap; gap: 10px; margin-bottom: 15px; align-items: center; }
+        #controls label { margin-right: 5px; font-size: 0.9em; }
+        #model-selection { padding: 8px; border-radius: 4px; border: 1px solid #ddd; flex-grow: 1; min-width: 180px; font-size: 0.9em; }
+        #download, #send { padding: 10px 15px; background-color: #4CAF50; color: white; border: none; cursor: pointer; border-radius: 4px; font-size: 0.9em; }
+        #download:disabled, #send:disabled { background-color: #ccc; cursor: not-allowed; }
+        #chat-box { height: 350px; border: 1px solid #ddd; overflow-y: auto; padding: 10px; margin-bottom: 10px; background-color: #f9f9f9; flex-grow: 1; }
+        .message-container { margin-bottom: 10px; display: flex; }
+        .message { padding: 10px; border-radius: 7px; max-width: 85%; word-wrap: break-word; line-height: 1.4; font-size: 0.95em; }
+        .message-container.user { justify-content: flex-end; }
+        .message-container.user .message { background-color: #e1f5fe; color: #333; }
+        .message-container.assistant .message { background-color: #e8f5e9; color: #333; }
+        #inputArea { display: flex; margin-bottom: 10px; }
+        #user-input { flex-grow: 1; padding: 10px; border: 1px solid #ddd; border-radius: 4px 0 0 4px; font-size: 0.95em; }
+        #user-input:disabled { background-color: #f0f0f0; }
+        #statusArea { margin-top: 5px; padding: 8px; font-style: italic; color: #555; background-color: #efefef; border-radius: 4px; font-size: 0.85em; }
+        #download-status { font-weight: bold; }
+        #chat-stats { font-size: 0.8em; color: #333; margin-top: 5px; }
+        #errorLogContainer { margin-top: 15px; }
+        #errorLogTitle { font-weight: bold; margin-bottom: 5px; font-size: 0.9em; }
+        #errorLog { background-color: #ffdddd; border: 1px solid #ffaaaa; color: #d8000c; height: 100px; overflow-y: auto; padding: 10px; border-radius: 4px; font-size: 0.8em; white-space: pre-wrap; }
+        .log-entry { margin-bottom: 5px; }
+        .log-entry pre { margin-top: 3px; padding-left: 10px; font-size: 0.9em; color: #78000c;}
+        .hidden { display: none; }
+         @media (max-width: 600px) {
+            body { padding: 10px; }
+            #appContainer { width: 100%; padding: 15px; margin-bottom: 0; }
+            h1 { font-size: 1.3em; }
+            #controls { flex-direction: column; align-items: stretch; }
+            #model-selection { min-width: 100%; }
+            #chat-box { height: calc(100vh - 380px); /* Adjust based on other elements */ }
+        }
+    </style>
 </head>
 <body>
-    <div class="app-container">
-        <header>
-            <h1>Web-LLM Chat (MLCEngine)</h1>
-            <button id="theme-toggle">Toggle Theme</button>
-        </header>
+    <div id="appContainer">
+        <h1>WebLLM Conflict Chat</h1>
 
-        <div class="settings-area">
-            <h2>Settings</h2>
-            <div>
-                <label for="model-select">Select LLM Model:</label>
-                <select id="model-select">
-                    <!-- Options will be populated by JS -->
-                </select>
-            </div>
-            <button id="load-model-button">Load Selected Model</button>
-            <p id="current-settings-display"></p>
+        <div id="controls">
+            <label for="model-selection">Select Model:</label>
+            <select id="model-selection"></select>
+            <button id="download" disabled>Load Model</button>
         </div>
 
-        <main class="chat-area">
-            <div id="chat-messages">
-                <div id="llm-status" class="status-message">Select a model and click "Load Selected Model".</div>
-                <!-- Chat messages will be appended here -->
-            </div>
-            <div class="chat-input-area">
-                <textarea id="message-input" placeholder="Type your message..." rows="2" disabled></textarea>
-                <button id="send-button" disabled>Send</button>
-                <button id="voice-button" title="Voice Input (Future)">🎤</button>
-            </div>
-        </main>
+        <div id="statusArea">
+            <div id="download-status">Checking available storage and populating models...</div>
+            <div id="chat-stats" class="hidden"></div>
+        </div>
 
-        <footer>
-            <h2>Event & Error Log</h2>
-            <div id="log-container">
-                <!-- Log messages will be appended here -->
-            </div>
-            <button id="clear-log-button">Clear Log</button>
-            <div id="chat-stats" class="status-message hidden"></div>
-        </footer>
+        <div id="chat-box"></div>
+
+        <div id="inputArea">
+            <input type="text" id="user-input" placeholder="Type your message..." disabled>
+            <button id="send" disabled>Send</button>
+        </div>
+
+        <div id="errorLogContainer">
+            <div id="errorLogTitle">Error Log:</div>
+            <div id="errorLog"></div>
+        </div>
     </div>
 
-    <!-- Script must be type="module" for top-level import -->
-    <script type="module" src="script.js"></script>
+    <script type="module">
+        // --- PWA Setup ---
+        const PWA_SETUP = {
+            // SW_VERSION is now primarily for reference here; actual version for SW is in sw.js
+            SW_VERSION_REFERENCE: 'v1.0.2',
+            APP_NAME: "WebLLM Conflict Chat",
+            SHORT_NAME: "LLM Chat",
+            DESCRIPTION: "AI-powered conflict resolution chat using WebLLM, running in your browser.",
+            THEME_COLOR: "#4CAF50",
+            BACKGROUND_COLOR: "#f4f4f4",
+            START_URL: "./index.html", // Ensures it works well on GitHub Pages
+
+            createSvgDataUrl: function(svgString) {
+                return `data:image/svg+xml;base64,${btoa(unescape(encodeURIComponent(svgString)))}`;
+            },
+
+            generateIcons: function() {
+                const commonPath = `M20 2H4c-1.1 0-2 .9-2 2v18l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zm-2 12H6v-2h12v2zm0-3H6V9h12v2zm0-3H6V6h12v2z`;
+                const textElement = (text, yPos = "18.5", fontSize = "3.8px", color = "white") =>
+                    `<text x="50%" y="${yPos}" dominant-baseline="middle" text-anchor="middle" font-family="Arial, sans-serif" font-size="${fontSize}" fill="${color}" font-weight="bold">${text}</text>`;
+
+                const iconSvgTemplate = (size, bgColor, fgColor, textContent) => `
+                    <svg xmlns="http://www.w3.org/2000/svg" width="${size}" height="${size}" viewBox="0 0 24 24">
+                        <rect width="24" height="24" fill="${bgColor}"/>
+                        <path fill="${fgColor}" d="${commonPath}"/>
+                        ${textContent ? textElement(textContent) : ''}
+                    </svg>`.trim();
+
+                const themedIconSvg = (size, textContent) => iconSvgTemplate(size, this.THEME_COLOR, "white", textContent);
+
+                this.appleTouchIconUrl = this.createSvgDataUrl(themedIconSvg(180, "Chat"));
+                this.manifestIconUrl192 = this.createSvgDataUrl(themedIconSvg(192, "Chat"));
+                this.manifestIconUrl512 = this.createSvgDataUrl(themedIconSvg(512, "Chat"));
+            },
+
+            setupManifest: function() {
+                const manifest = {
+                    name: this.APP_NAME,
+                    short_name: this.SHORT_NAME,
+                    description: this.DESCRIPTION,
+                    start_url: this.START_URL,
+                    display: "standalone",
+                    background_color: this.BACKGROUND_COLOR,
+                    theme_color: this.THEME_COLOR,
+                    icons: [
+                        {
+                            src: this.manifestIconUrl192,
+                            sizes: "192x192",
+                            type: "image/svg+xml",
+                            purpose: "any maskable"
+                        },
+                        {
+                            src: this.manifestIconUrl512,
+                            sizes: "512x512",
+                            type: "image/svg+xml",
+                            purpose: "any maskable"
+                        }
+                    ]
+                };
+                const manifestString = JSON.stringify(manifest);
+                const manifestBlob = new Blob([manifestString], {type: 'application/manifest+json'});
+                const manifestUrl = URL.createObjectURL(manifestBlob);
+
+                const linkManifest = document.createElement('link');
+                linkManifest.rel = 'manifest';
+                linkManifest.href = manifestUrl;
+                document.head.appendChild(linkManifest);
+            },
+
+            setupAppleTouchIcon: function() {
+                const linkAppleIcon = document.createElement('link');
+                linkAppleIcon.rel = 'apple-touch-icon';
+                linkAppleIcon.href = this.appleTouchIconUrl;
+                document.head.appendChild(linkAppleIcon);
+            },
+
+            registerServiceWorker: function() {
+                if ('serviceWorker' in navigator) {
+                    const swPath = './sw.js'; // Path to the external service worker file
+                    navigator.serviceWorker.register(swPath)
+                        .then(registration => {
+                            console.log(`Service Worker registered from ${swPath} with scope:`, registration.scope);
+                            // Optional: logic to prompt user to update if new SW is waiting
+                            registration.addEventListener('updatefound', () => {
+                                const newWorker = registration.installing;
+                                if (newWorker) {
+                                    newWorker.addEventListener('statechange', () => {
+                                        if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
+                                            // New SW is installed and waiting.
+                                            // You could show a "New version available, refresh?" UI here.
+                                            console.log("New service worker installed and waiting. Please refresh page to get the latest version.");
+                                            // Example: alert("New version available! Please refresh the page.");
+                                        }
+                                    });
+                                }
+                            });
+                        })
+                        .catch(error => {
+                            console.error('Service Worker registration failed:', error);
+                        });
+                } else {
+                    console.log('Service Worker not supported in this browser.');
+                }
+            },
+
+            init: function() {
+                try {
+                    this.generateIcons();
+                    this.setupManifest();
+                    this.setupAppleTouchIcon();
+                    this.registerServiceWorker();
+                } catch (e) {
+                    console.error("PWA Setup Error:", e);
+                }
+            }
+        };
+
+        PWA_SETUP.init();
+        // --- End PWA Setup ---
+
+
+        // --- Original App Code ---
+        import * as webllm from "https://esm.run/@mlc-ai/web-llm";
+
+        const chatBox = document.getElementById('chat-box');
+        const userInput = document.getElementById('user-input');
+        const sendButton = document.getElementById('send');
+        const modelSelection = document.getElementById('model-selection');
+        const downloadButton = document.getElementById('download');
+        const downloadStatusDiv = document.getElementById('download-status');
+        const chatStatsDiv = document.getElementById('chat-stats');
+        const errorLogDiv = document.getElementById('errorLog');
+
+        const conflict_details="my 14 yr old daughter is not serious about her studies. she is always on the iphone or ipad or TV. I feel she doesnt care about her future. I have treied motivating her with rewards like phone or TV time, i have tried scolding her, i have tried to talk nicely to her, but nithing seems to work.";
+        const most_desired_sol="she gets more engaged in studies and gets good grades";
+        const least_desired_sol="she gets depressed";
+        const compromised_sol="she gets phone TV time only when she gets good grades";
+
+        const chatMessages = [
+            {
+              content: `You are personal or work conflict resolution expert. The user has described the following conflict :${conflict_details}.
+              According to the user the most desired solution is ${most_desired_sol} , least desired solution is ${least_desired_sol} ,
+              the user suggest the following as posssible compromised solution ${compromised_sol}. Apply your skills as an expert of
+              conflict resolution strategies to provide the user 2 options ( A & B ) to solve this conflict.After the user picks A or B ,
+              role play a converation (as the user's daughter) with the user to train the user to solve the conflict. Start the chat by providing the user options A and B.
+              wait for the user to choose and then for the rest of the chat act as the user's daughter. Don't do the entire converation on you own, wait for the user to respond`,
+              role: "system"
+            }
+        ];
+
+        let selectedModel = "";
+        const engine = new webllm.MLCEngine();
+
+        function logError(errorSource, error) {
+            console.error(errorSource, error);
+            const timestamp = new Date().toLocaleTimeString();
+            const errorEntry = document.createElement('div');
+            errorEntry.classList.add('log-entry');
+            const errorMessage = (error instanceof Error) ? error.message : String(error);
+            errorEntry.textContent = `[${timestamp}] ${errorSource}: ${errorMessage}`;
+            if (error instanceof Error && error.stack) {
+                const stackTrace = document.createElement('pre');
+                stackTrace.textContent = error.stack;
+                errorEntry.appendChild(stackTrace);
+            }
+            errorLogDiv.appendChild(errorEntry);
+            errorLogDiv.scrollTop = errorLogDiv.scrollHeight;
+        }
+
+        function logStatus(message) {
+            console.log("Status:", message);
+            downloadStatusDiv.textContent = message;
+        }
+
+
+        function updateEngineInitProgressCallback(report) {
+            downloadStatusDiv.textContent = report.text;
+            if (report.progress === 1) {
+                 downloadStatusDiv.textContent = `Model ${selectedModel} loaded. Waiting for initial advice...`;
+            }
+        }
+        engine.setInitProgressCallback(updateEngineInitProgressCallback);
+
+        async function sendInitialBotMessage() {
+            logStatus("LLM is generating initial advice...");
+            sendButton.disabled = true;
+            userInput.disabled = true;
+            userInput.setAttribute("placeholder", "Generating initial advice...");
+
+            const typingMessage = { role: "assistant", content: "▍" };
+            displayMessage(typingMessage);
+
+            let accumulatedMessage = "";
+            let animationFrameId;
+            let cursorVisible = true;
+            const typingIndicator = () => {
+                if (sendButton.disabled === false && userInput.disabled === false) {
+                    updateLastBotMessage(accumulatedMessage);
+                    if (animationFrameId) cancelAnimationFrame(animationFrameId);
+                    return;
+                }
+                updateLastBotMessage(accumulatedMessage + (cursorVisible ? "▍" : ""));
+                cursorVisible = !cursorVisible;
+                animationFrameId = requestAnimationFrame(typingIndicator);
+            };
+            animationFrameId = requestAnimationFrame(typingIndicator);
+
+            const messagesForAPICall = [
+                chatMessages[0],
+                { role: "user", content: "Please provide the two options (A & B) to solve the conflict as instructed." }
+            ];
+
+            await streamGenerate(
+                messagesForAPICall,
+                (partialMessage) => {
+                    accumulatedMessage = partialMessage;
+                },
+                async (finalMessage) => {
+                    if (animationFrameId) cancelAnimationFrame(animationFrameId);
+                    updateLastBotMessage(finalMessage);
+                    chatMessages.push({ role: "assistant", content: finalMessage });
+
+                    sendButton.disabled = false;
+                    userInput.disabled = false;
+                    userInput.setAttribute("placeholder", "Type your message...");
+                    userInput.focus();
+                    logStatus(`Initial advice received. You can now chat.`);
+                    try {
+                        const statsText = await engine.runtimeStatsText();
+                        chatStatsDiv.textContent = statsText;
+                        chatStatsDiv.classList.remove("hidden");
+                    } catch (err) {
+                        logError("RuntimeStats (Initial)", err);
+                        chatStatsDiv.textContent = "Could not retrieve runtime stats.";
+                        chatStatsDiv.classList.remove("hidden");
+                    }
+                }
+            );
+        }
+
+
+        async function initializeWebLLMEngine() {
+            sendButton.disabled = true;
+            userInput.disabled = true;
+            downloadButton.disabled = true;
+            downloadStatusDiv.textContent = "Initializing WebLLM engine...";
+            downloadStatusDiv.classList.remove("hidden");
+            chatStatsDiv.classList.add("hidden");
+
+            selectedModel = modelSelection.value;
+            if (!selectedModel) {
+                logError("Initialization", "No model selected.");
+                downloadStatusDiv.textContent = "Error: No model selected.";
+                downloadButton.disabled = false;
+                return;
+            }
+
+            const config = { temperature: 0.7, top_p: 0.95 };
+            const chatOpts = {};
+
+            try {
+                logStatus(`Loading model: ${selectedModel}...`);
+                await engine.reload(selectedModel, chatOpts, config);
+                logStatus(`Model ${selectedModel} loaded. Generating initial conflict resolution advice...`);
+                await sendInitialBotMessage();
+                downloadButton.disabled = false;
+
+
+            } catch (err) {
+                logError("Engine.reload or InitialMessage", err);
+                logStatus(`Error loading model ${selectedModel} or getting initial advice. Check error log.`);
+                downloadButton.disabled = false;
+                userInput.disabled = true;
+                sendButton.disabled = true;
+            }
+        }
+
+        async function streamGenerate(currentMessages, onUpdate, onFinish) {
+            try {
+                let curMessage = "";
+                const completion = await engine.chat.completions.create({
+                    stream: true,
+                    messages: currentMessages,
+                });
+
+                for await (const chunk of completion) {
+                    const curDelta = chunk.choices[0]?.delta?.content || "";
+                    if (curDelta) {
+                        curMessage += curDelta;
+                    }
+                    onUpdate(curMessage);
+                }
+                await onFinish(curMessage);
+            } catch (err) {
+                logError("StreamingGeneration", err);
+                await onFinish("Sorry, an error occurred during generation.");
+            }
+        }
+
+        function displayMessage(message) {
+            const container = document.createElement("div");
+            container.classList.add("message-container");
+            const newMessageDiv = document.createElement("div");
+            newMessageDiv.classList.add("message");
+
+            let content = message.content.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
+            content = content.replace(/\*(.*?)\*/g, '<em>$1</em>');
+            content = content.replace(/\n/g, '<br>');
+
+            newMessageDiv.innerHTML = content;
+
+            if (message.role === "user") {
+                container.classList.add("user");
+            } else {
+                container.classList.add("assistant");
+                const uniqueId = "bot-message-" + Date.now() + Math.random().toString(36).substring(2,7);
+                newMessageDiv.id = uniqueId;
+                container.dataset.botMessageId = uniqueId;
+            }
+
+            container.appendChild(newMessageDiv);
+            chatBox.appendChild(container);
+            chatBox.scrollTop = chatBox.scrollHeight;
+        }
+
+        function updateLastBotMessage(content) {
+            const lastBotMessageContainer = chatBox.querySelector('.message-container.assistant:last-child');
+            if (lastBotMessageContainer) {
+                const messageDiv = lastBotMessageContainer.querySelector('.message');
+                if (messageDiv) {
+                    let formattedContent = content.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
+                    formattedContent = formattedContent.replace(/\*(.*?)\*/g, '<em>$1</em>');
+                    formattedContent = formattedContent.replace(/\n/g, '<br>');
+                    messageDiv.innerHTML = formattedContent;
+                    chatBox.scrollTop = chatBox.scrollHeight;
+                }
+            }
+        }
+
+        async function handleSendMessage() {
+            const inputText = userInput.value.trim();
+            if (inputText.length === 0 || sendButton.disabled) {
+                return;
+            }
+
+            sendButton.disabled = true;
+            userInput.disabled = true;
+            userInput.setAttribute("placeholder", "Generating response...");
+
+            const userMessage = { role: "user", content: inputText };
+            chatMessages.push(userMessage);
+            displayMessage(userMessage);
+            userInput.value = "";
+
+            const typingMessage = { role: "assistant", content: "▍" };
+            displayMessage(typingMessage);
+
+            let accumulatedMessage = "";
+            let animationFrameId;
+            let cursorVisible = true;
+            const typingIndicator = () => {
+                if (sendButton.disabled === false && userInput.disabled === false) {
+                    updateLastBotMessage(accumulatedMessage);
+                     if (animationFrameId) cancelAnimationFrame(animationFrameId);
+                    return;
+                }
+                updateLastBotMessage(accumulatedMessage + (cursorVisible ? "▍" : ""));
+                cursorVisible = !cursorVisible;
+                animationFrameId = requestAnimationFrame(typingIndicator);
+            };
+            animationFrameId = requestAnimationFrame(typingIndicator);
+
+            await streamGenerate(
+                chatMessages,
+                (partialMessage) => {
+                    accumulatedMessage = partialMessage;
+                },
+                async (finalMessage) => {
+                    if (animationFrameId) cancelAnimationFrame(animationFrameId);
+                    updateLastBotMessage(finalMessage);
+                    chatMessages.push({ role: "assistant", content: finalMessage });
+
+                    sendButton.disabled = false;
+                    userInput.disabled = false;
+                    userInput.setAttribute("placeholder", "Type your message...");
+                    userInput.focus();
+
+                    try {
+                        const statsText = await engine.runtimeStatsText();
+                        chatStatsDiv.textContent = statsText;
+                        chatStatsDiv.classList.remove("hidden");
+                    } catch (err) {
+                        logError("RuntimeStats", err);
+                        chatStatsDiv.textContent = "Could not retrieve runtime stats.";
+                        chatStatsDiv.classList.remove("hidden");
+                    }
+                }
+            );
+        }
+
+        function getModelEstimatedSizeMB(modelInfo) {
+            if (modelInfo && typeof modelInfo.vram_required_MB === 'number' && modelInfo.vram_required_MB > 0) {
+                return modelInfo.vram_required_MB;
+            }
+            logError("getModelEstimatedSizeMB Warning", `vram_required_MB not found or invalid for ${modelInfo.model_id}. Using a default heuristic estimate.`);
+            const modelIdLowerCase = modelInfo.model_id.toLowerCase();
+            if (modelIdLowerCase.includes("7b") || modelIdLowerCase.includes("8b")) return 4000;
+            if (modelIdLowerCase.includes("3b") || modelIdLowerCase.includes("4b")) return 2000;
+            if (modelIdLowerCase.includes("qwen2.5-0.5b")) return 350;
+            if (modelIdLowerCase.includes("phi-2") && modelIdLowerCase.includes("q0f16")) return 5500;
+            if (modelIdLowerCase.includes("phi-2") && modelIdLowerCase.includes("q0f32")) return 5500;
+            if (modelIdLowerCase.includes("phi-2")) return 1500;
+            if (modelIdLowerCase.includes("1b") || modelIdLowerCase.includes("2b")) return 1000;
+            return 1500;
+        }
+
+        async function populateModels() {
+            modelSelection.innerHTML = "";
+            let availableCacheMB = 2000;
+            let cacheQuotaMB = 4000;
+
+            if (navigator.storage && navigator.storage.estimate) {
+                try {
+                    const estimate = await navigator.storage.estimate();
+                    cacheQuotaMB = estimate.quota ? estimate.quota / (1024 * 1024) : 4000;
+                    const usageMB = estimate.usage ? estimate.usage / (1024 * 1024) : 0;
+                    availableCacheMB = cacheQuotaMB - usageMB;
+                    logStatus(`Storage: ${usageMB.toFixed(0)}MB used of ${cacheQuotaMB.toFixed(0)}MB. Available: ${availableCacheMB.toFixed(0)}MB.`);
+                } catch (err) {
+                    logError("StorageEstimate", err);
+                    logStatus("Could not estimate storage. Using defaults. Model filtering may be less accurate.");
+                }
+            } else {
+                logStatus("Storage API not supported. Using defaults. Model filtering may be less accurate.");
+            }
+
+            const cacheThresholdMB = Math.max(availableCacheMB * 0.8, 500);
+            logStatus(`Showing models estimated < ${cacheThresholdMB.toFixed(0)}MB (fit available storage).`);
+
+            const suitableModels = [];
+            try {
+                if (!webllm.prebuiltAppConfig || !webllm.prebuiltAppConfig.model_list) {
+                    logError("PopulateModels", "WebLLM prebuiltAppConfig or model_list not available.");
+                    downloadStatusDiv.textContent = "Error: Could not retrieve model list from WebLLM.";
+                    downloadButton.disabled = true;
+                    return;
+                }
+                const allModels = webllm.prebuiltAppConfig.model_list;
+
+                if (!allModels || allModels.length === 0) {
+                    logError("PopulateModels", "No prebuilt models found in config.");
+                    downloadStatusDiv.textContent = "Error: No models available from WebLLM config.";
+                    downloadButton.disabled = true;
+                    return;
+                }
+
+                allModels.forEach(modelInfo => {
+                    const estimatedSizeMB = getModelEstimatedSizeMB(modelInfo);
+                    console.log(`Model: ${modelInfo.model_id}, Declared VRAM: ${modelInfo.vram_required_MB || 'N/A'}MB, Filter VRAM: ${estimatedSizeMB}MB`);
+
+                    if (estimatedSizeMB < cacheThresholdMB) {
+                        suitableModels.push(modelInfo);
+                    } else {
+                        console.log(`Skipping ${modelInfo.model_id} - too large (Est. VRAM ${estimatedSizeMB}MB vs ${cacheThresholdMB.toFixed(0)}MB threshold)`);
+                    }
+                });
+
+                suitableModels.sort((a,b) => getModelEstimatedSizeMB(a) - getModelEstimatedSizeMB(b));
+
+
+                if (suitableModels.length > 0) {
+                    suitableModels.forEach(modelInfo => {
+                        const option = document.createElement("option");
+                        option.value = modelInfo.model_id;
+                        const vramDisplay = modelInfo.vram_required_MB ? `${modelInfo.vram_required_MB.toFixed(0)}MB VRAM` : `~${getModelEstimatedSizeMB(modelInfo).toFixed(0)}MB`;
+                        option.textContent = `${modelInfo.model_id} (${vramDisplay})`;
+                        modelSelection.appendChild(option);
+                    });
+
+                    let defaultModelIdToSet = "";
+                    const preferredDefaults = [
+                        "Qwen2.5-0.5B-Instruct-q4f32_1-MLC",
+                        "TinyLlama-1.1B-Chat-v1.0-q4f32_1-MLC",
+                        "gemma-2b-it-q4f32_1-MLC",
+                        "Llama-3.1-8B-Instruct-q4f32_1-MLC-1k",
+                        "Llama-3-8B-Instruct-q4f32_1-MLC-1k",
+                    ];
+
+                    for (const prefModel of preferredDefaults) {
+                        if (suitableModels.find(m => m.model_id === prefModel)) {
+                            defaultModelIdToSet = prefModel;
+                            break;
+                        }
+                    }
+
+                    if (!defaultModelIdToSet && suitableModels.length > 0) {
+                        defaultModelIdToSet = suitableModels[0].model_id;
+                    }
+
+                    if (defaultModelIdToSet) {
+                       modelSelection.value = defaultModelIdToSet;
+                    }
+
+                    selectedModel = modelSelection.value;
+                    downloadButton.disabled = false;
+                    logStatus(`Select model (default: ${selectedModel || 'None'}) and click "Load Model". ${suitableModels.length} models fit criteria.`);
+                } else {
+                    logError("PopulateModels", "No models meet the VRAM/cache size criteria.");
+                    downloadStatusDiv.textContent = `No models small enough (Est. VRAM < ${cacheThresholdMB.toFixed(0)}MB). Try clearing browser cache or check error log.`;
+                    downloadButton.disabled = true;
+                }
+            } catch (err) {
+                logError("PopulateModels", err);
+                downloadStatusDiv.textContent = "Error fetching or filtering model list. Check console.";
+                downloadButton.disabled = true;
+            }
+        }
+
+        downloadButton.addEventListener("click", initializeWebLLMEngine);
+        sendButton.addEventListener("click", handleSendMessage);
+        userInput.addEventListener("keypress", (event) => {
+            if (event.key === "Enter" && !event.shiftKey && !sendButton.disabled) {
+                event.preventDefault();
+                handleSendMessage();
+            }
+        });
+
+        (async () => {
+            try {
+                await populateModels();
+            } catch (e) {
+                logError("Initial Model Population", e);
+                downloadStatusDiv.textContent = "Failed to populate models. Check error log.";
+            }
+        })();
+
+    </script>
 </body>
 </html>
