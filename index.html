@@ -3,65 +3,100 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-    <title>WebLLM Conflict Chat</title>
-
-    <!-- PWA and iOS specific meta tags -->
-    <meta name="description" content="AI-powered conflict resolution chat using WebLLM, running in your browser.">
+    <title>LLM Conflict Chat</title>
+    <meta name="description" content="AI-powered conflict resolution chat, choose your LLM.">
     <meta name="theme-color" content="#4CAF50">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="default">
     <meta name="apple-mobile-web-app-title" content="LLM Chat">
-    <!-- Icons and manifest will be added dynamically by script -->
 
     <style>
         body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol"; display: flex; flex-direction: column; align-items: center; padding: 20px; background-color: #f4f4f4; margin: 0; min-height: 100vh; box-sizing: border-box; }
         #appContainer { width: 90%; max-width: 700px; background-color: #fff; border-radius: 8px; box-shadow: 0 0 10px rgba(0,0,0,0.1); padding: 20px; display: flex; flex-direction: column; }
-        h1 { font-size: 1.5em; text-align: center; color: #333; margin-top:0; }
-        #controls { display: flex; flex-wrap: wrap; gap: 10px; margin-bottom: 15px; align-items: center; }
-        #controls label { margin-right: 5px; font-size: 0.9em; }
+        h1 { font-size: 1.5em; text-align: center; color: #333; margin-top:0; margin-bottom: 15px; }
+
+        .config-section { margin-bottom: 15px; padding: 10px; border: 1px solid #e0e0e0; border-radius: 5px; background-color: #f9f9f9; }
+        .config-section label { font-weight: bold; margin-right: 8px; }
+        .config-section input[type="radio"] { margin-right: 3px; }
+        .config-section input[type="radio"] + label { font-weight: normal; margin-right: 15px;}
+
+        #geminiConfigSection input[type="password"],
+        #geminiConfigSection input[type="text"] { width: calc(100% - 22px); padding: 8px; margin-bottom: 8px; border: 1px solid #ccc; border-radius: 4px; box-sizing: border-box; }
+        #geminiConfigSection button { padding: 8px 12px; background-color: #007bff; color: white; border: none; border-radius: 4px; cursor: pointer; margin-right: 5px; font-size: 0.9em; }
+        #geminiConfigSection button:hover { background-color: #0056b3; }
+        .api-key-status { font-size: 0.85em; color: #555; margin-top: 5px; }
+
+        #webLlmConfigSection #controls { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; }
+        #webLlmConfigSection #controls label { margin-right: 5px; font-size: 0.9em; }
         #model-selection { padding: 8px; border-radius: 4px; border: 1px solid #ddd; flex-grow: 1; min-width: 180px; font-size: 0.9em; }
+
         #download, #send { padding: 10px 15px; background-color: #4CAF50; color: white; border: none; cursor: pointer; border-radius: 4px; font-size: 0.9em; }
         #download:disabled, #send:disabled { background-color: #ccc; cursor: not-allowed; }
+
         #chat-box { height: 350px; border: 1px solid #ddd; overflow-y: auto; padding: 10px; margin-bottom: 10px; background-color: #f9f9f9; flex-grow: 1; }
         .message-container { margin-bottom: 10px; display: flex; }
         .message { padding: 10px; border-radius: 7px; max-width: 85%; word-wrap: break-word; line-height: 1.4; font-size: 0.95em; }
-        .message-container.user { justify-content: flex-end; }
         .message-container.user .message { background-color: #e1f5fe; color: #333; }
         .message-container.assistant .message { background-color: #e8f5e9; color: #333; }
+        .message-container.error .message { background-color: #ffebee; color: #c62828; }
+
+
         #inputArea { display: flex; margin-bottom: 10px; }
         #user-input { flex-grow: 1; padding: 10px; border: 1px solid #ddd; border-radius: 4px 0 0 4px; font-size: 0.95em; }
         #user-input:disabled { background-color: #f0f0f0; }
+
         #statusArea { margin-top: 5px; padding: 8px; font-style: italic; color: #555; background-color: #efefef; border-radius: 4px; font-size: 0.85em; }
-        #download-status { font-weight: bold; }
+        #download-status { font-weight: bold; } /* Reused for general status */
         #chat-stats { font-size: 0.8em; color: #333; margin-top: 5px; }
+
         #errorLogContainer { margin-top: 15px; }
         #errorLogTitle { font-weight: bold; margin-bottom: 5px; font-size: 0.9em; }
         #errorLog { background-color: #ffdddd; border: 1px solid #ffaaaa; color: #d8000c; height: 100px; overflow-y: auto; padding: 10px; border-radius: 4px; font-size: 0.8em; white-space: pre-wrap; }
         .log-entry { margin-bottom: 5px; }
         .log-entry pre { margin-top: 3px; padding-left: 10px; font-size: 0.9em; color: #78000c;}
-        .hidden { display: none; }
+        .hidden { display: none !important; }
+
          @media (max-width: 600px) {
             body { padding: 10px; }
             #appContainer { width: 100%; padding: 15px; margin-bottom: 0; }
             h1 { font-size: 1.3em; }
-            #controls { flex-direction: column; align-items: stretch; }
+            #webLlmConfigSection #controls { flex-direction: column; align-items: stretch; }
             #model-selection { min-width: 100%; }
-            #chat-box { height: calc(100vh - 380px); /* Adjust based on other elements */ }
+            #chat-box { height: calc(100vh - 420px); /* Adjust based on other elements */ }
         }
     </style>
 </head>
 <body>
     <div id="appContainer">
-        <h1>WebLLM Conflict Chat</h1>
+        <h1>LLM Conflict Chat</h1>
 
-        <div id="controls">
-            <label for="model-selection">Select Model:</label>
-            <select id="model-selection"></select>
-            <button id="download" disabled>Load Model</button>
+        <div id="llmProviderSelectorDiv" class="config-section">
+            <label>LLM Provider:</label>
+            <input type="radio" id="providerWebLLM" name="llmProvider" value="webllm" checked>
+            <label for="providerWebLLM">WebLLM (Local)</label>
+            <input type="radio" id="providerGemini" name="llmProvider" value="gemini">
+            <label for="providerGemini">Gemini API</label>
+        </div>
+
+        <div id="geminiConfigSection" class="config-section hidden">
+            <label for="geminiApiKeyInput">Gemini API Key:</label>
+            <input type="password" id="geminiApiKeyInput" placeholder="Enter your Gemini API Key">
+            <button id="saveGeminiApiKeyButton">Save Key</button>
+            <button id="testGeminiApiKeyButton">Test Key</button>
+            <button id="clearGeminiApiKeyButton">Clear Key</button>
+            <p id="geminiApiKeyStatus" class="api-key-status">Enter API key to use Gemini.</p>
+        </div>
+
+        <div id="webLlmConfigSection" class="config-section">
+            <div id="controls">
+                <label for="model-selection">Select Model:</label>
+                <select id="model-selection"></select>
+                <button id="download" disabled>Load Model</button>
+            </div>
         </div>
 
         <div id="statusArea">
-            <div id="download-status">Checking available storage and populating models...</div>
+            <div id="mainStatus">Checking available storage and populating models...</div>
             <div id="chat-stats" class="hidden"></div>
         </div>
 
@@ -79,157 +114,124 @@
     </div>
 
     <script type="module">
-        // --- PWA Setup ---
+        // --- PWA Setup (same as before, referencing external sw.js) ---
         const PWA_SETUP = {
-            // SW_VERSION is now primarily for reference here; actual version for SW is in sw.js
-            SW_VERSION_REFERENCE: 'v1.0.2',
-            APP_NAME: "WebLLM Conflict Chat",
+            SW_VERSION_REFERENCE: 'v1.0.3', // Matches sw.js version
+            APP_NAME: "LLM Conflict Chat",
             SHORT_NAME: "LLM Chat",
-            DESCRIPTION: "AI-powered conflict resolution chat using WebLLM, running in your browser.",
+            DESCRIPTION: "AI-powered conflict resolution chat, choose your LLM.",
             THEME_COLOR: "#4CAF50",
             BACKGROUND_COLOR: "#f4f4f4",
-            START_URL: "./index.html", // Ensures it works well on GitHub Pages
+            START_URL: "./index.html",
 
             createSvgDataUrl: function(svgString) {
                 return `data:image/svg+xml;base64,${btoa(unescape(encodeURIComponent(svgString)))}`;
             },
-
             generateIcons: function() {
                 const commonPath = `M20 2H4c-1.1 0-2 .9-2 2v18l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zm-2 12H6v-2h12v2zm0-3H6V9h12v2zm0-3H6V6h12v2z`;
                 const textElement = (text, yPos = "18.5", fontSize = "3.8px", color = "white") =>
                     `<text x="50%" y="${yPos}" dominant-baseline="middle" text-anchor="middle" font-family="Arial, sans-serif" font-size="${fontSize}" fill="${color}" font-weight="bold">${text}</text>`;
-
                 const iconSvgTemplate = (size, bgColor, fgColor, textContent) => `
                     <svg xmlns="http://www.w3.org/2000/svg" width="${size}" height="${size}" viewBox="0 0 24 24">
                         <rect width="24" height="24" fill="${bgColor}"/>
                         <path fill="${fgColor}" d="${commonPath}"/>
                         ${textContent ? textElement(textContent) : ''}
                     </svg>`.trim();
-
                 const themedIconSvg = (size, textContent) => iconSvgTemplate(size, this.THEME_COLOR, "white", textContent);
-
                 this.appleTouchIconUrl = this.createSvgDataUrl(themedIconSvg(180, "Chat"));
                 this.manifestIconUrl192 = this.createSvgDataUrl(themedIconSvg(192, "Chat"));
                 this.manifestIconUrl512 = this.createSvgDataUrl(themedIconSvg(512, "Chat"));
             },
-
             setupManifest: function() {
                 const manifest = {
-                    name: this.APP_NAME,
-                    short_name: this.SHORT_NAME,
-                    description: this.DESCRIPTION,
-                    start_url: this.START_URL,
-                    display: "standalone",
-                    background_color: this.BACKGROUND_COLOR,
+                    name: this.APP_NAME, short_name: this.SHORT_NAME, description: this.DESCRIPTION,
+                    start_url: this.START_URL, display: "standalone", background_color: this.BACKGROUND_COLOR,
                     theme_color: this.THEME_COLOR,
                     icons: [
-                        {
-                            src: this.manifestIconUrl192,
-                            sizes: "192x192",
-                            type: "image/svg+xml",
-                            purpose: "any maskable"
-                        },
-                        {
-                            src: this.manifestIconUrl512,
-                            sizes: "512x512",
-                            type: "image/svg+xml",
-                            purpose: "any maskable"
-                        }
+                        { src: this.manifestIconUrl192, sizes: "192x192", type: "image/svg+xml", purpose: "any maskable" },
+                        { src: this.manifestIconUrl512, sizes: "512x512", type: "image/svg+xml", purpose: "any maskable" }
                     ]
                 };
-                const manifestString = JSON.stringify(manifest);
-                const manifestBlob = new Blob([manifestString], {type: 'application/manifest+json'});
+                const manifestBlob = new Blob([JSON.stringify(manifest)], {type: 'application/manifest+json'});
                 const manifestUrl = URL.createObjectURL(manifestBlob);
-
                 const linkManifest = document.createElement('link');
-                linkManifest.rel = 'manifest';
-                linkManifest.href = manifestUrl;
+                linkManifest.rel = 'manifest'; linkManifest.href = manifestUrl;
                 document.head.appendChild(linkManifest);
             },
-
             setupAppleTouchIcon: function() {
                 const linkAppleIcon = document.createElement('link');
-                linkAppleIcon.rel = 'apple-touch-icon';
-                linkAppleIcon.href = this.appleTouchIconUrl;
+                linkAppleIcon.rel = 'apple-touch-icon'; linkAppleIcon.href = this.appleTouchIconUrl;
                 document.head.appendChild(linkAppleIcon);
             },
-
             registerServiceWorker: function() {
                 if ('serviceWorker' in navigator) {
-                    const swPath = './sw.js'; // Path to the external service worker file
-                    navigator.serviceWorker.register(swPath)
-                        .then(registration => {
-                            console.log(`Service Worker registered from ${swPath} with scope:`, registration.scope);
-                            // Optional: logic to prompt user to update if new SW is waiting
-                            registration.addEventListener('updatefound', () => {
-                                const newWorker = registration.installing;
-                                if (newWorker) {
-                                    newWorker.addEventListener('statechange', () => {
-                                        if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
-                                            // New SW is installed and waiting.
-                                            // You could show a "New version available, refresh?" UI here.
-                                            console.log("New service worker installed and waiting. Please refresh page to get the latest version.");
-                                            // Example: alert("New version available! Please refresh the page.");
-                                        }
-                                    });
-                                }
-                            });
-                        })
-                        .catch(error => {
-                            console.error('Service Worker registration failed:', error);
-                        });
-                } else {
-                    console.log('Service Worker not supported in this browser.');
+                    navigator.serviceWorker.register('./sw.js') // External SW file
+                        .then(reg => console.log('Service Worker registered:', reg.scope))
+                        .catch(err => console.error('Service Worker registration failed:', err));
                 }
             },
-
             init: function() {
                 try {
-                    this.generateIcons();
-                    this.setupManifest();
-                    this.setupAppleTouchIcon();
-                    this.registerServiceWorker();
-                } catch (e) {
-                    console.error("PWA Setup Error:", e);
-                }
+                    this.generateIcons(); this.setupManifest(); this.setupAppleTouchIcon(); this.registerServiceWorker();
+                } catch (e) { console.error("PWA Setup Error:", e); }
             }
         };
-
         PWA_SETUP.init();
         // --- End PWA Setup ---
 
-
-        // --- Original App Code ---
         import * as webllm from "https://esm.run/@mlc-ai/web-llm";
 
+        // DOM Elements
         const chatBox = document.getElementById('chat-box');
         const userInput = document.getElementById('user-input');
         const sendButton = document.getElementById('send');
-        const modelSelection = document.getElementById('model-selection');
-        const downloadButton = document.getElementById('download');
-        const downloadStatusDiv = document.getElementById('download-status');
+        const mainStatusDiv = document.getElementById('mainStatus');
         const chatStatsDiv = document.getElementById('chat-stats');
         const errorLogDiv = document.getElementById('errorLog');
 
+        // LLM Provider UI
+        const providerWebLLMRadio = document.getElementById('providerWebLLM');
+        const providerGeminiRadio = document.getElementById('providerGemini');
+        const webLlmConfigSection = document.getElementById('webLlmConfigSection');
+        const geminiConfigSection = document.getElementById('geminiConfigSection');
+
+        // WebLLM UI
+        const modelSelection = document.getElementById('model-selection');
+        const downloadButton = document.getElementById('download');
+
+        // Gemini UI
+        const geminiApiKeyInput = document.getElementById('geminiApiKeyInput');
+        const saveGeminiApiKeyButton = document.getElementById('saveGeminiApiKeyButton');
+        const testGeminiApiKeyButton = document.getElementById('testGeminiApiKeyButton');
+        const clearGeminiApiKeyButton = document.getElementById('clearGeminiApiKeyButton');
+        const geminiApiKeyStatus = document.getElementById('geminiApiKeyStatus');
+
+        // --- State Variables ---
+        let currentLlmProvider = "webllm"; // "webllm" or "gemini"
+        let displayedChatMessages = []; // For UI: [{role: "user" | "assistant", content: "..."}]
+        let isLLMReady = false; // General flag if current LLM is ready for chat
+
+        // WebLLM State
+        let webLlmEngine = null; // Initialized if WebLLM is used
+        let webLlmChatHistory = []; // For WebLLM API: [{role: "system"|"user"|"assistant", content: "..."}]
+        let webLlmSelectedModel = "";
+
+        // Gemini State
+        const GEMINI_API_KEY_STORAGE_KEY = 'geminiApiKey_conflict_chat';
+        const GEMINI_MODEL_NAME = "gemini-1.5-flash-latest"; // Using a model known to support systemInstruction for cleaner prompts
+        const GEMINI_API_BASE_URL = 'https://generativelanguage.googleapis.com/v1beta/models/';
+        let geminiApiKey = null;
+        let geminiApiHistory = []; // For Gemini API: [{role: "user"|"model", parts: [{text: "..."}]}]
+        let isGeminiKeyValid = false;
+
+        // Initial System Prompt (common for both)
         const conflict_details="my 14 yr old daughter is not serious about her studies. she is always on the iphone or ipad or TV. I feel she doesnt care about her future. I have treied motivating her with rewards like phone or TV time, i have tried scolding her, i have tried to talk nicely to her, but nithing seems to work.";
         const most_desired_sol="she gets more engaged in studies and gets good grades";
         const least_desired_sol="she gets depressed";
         const compromised_sol="she gets phone TV time only when she gets good grades";
+        const initialSystemPromptContent = `You are personal or work conflict resolution expert. The user has described the following conflict :${conflict_details}. According to the user the most desired solution is ${most_desired_sol} , least desired solution is ${least_desired_sol} , the user suggest the following as posssible compromised solution ${compromised_sol}. Apply your skills as an expert of conflict resolution strategies to provide the user 2 options ( A & B ) to solve this conflict.After the user picks A or B , role play a converation (as the user's daughter) with the user to train the user to solve the conflict. Start the chat by providing the user options A and B. wait for the user to choose and then for the rest of the chat act as the user's daughter. Don't do the entire converation on you own, wait for the user to respond`;
+        const instructionForInitialOptions = "Please provide the two options (A & B) to solve the conflict as instructed in your system prompt/initial instructions. Then wait for my choice.";
 
-        const chatMessages = [
-            {
-              content: `You are personal or work conflict resolution expert. The user has described the following conflict :${conflict_details}.
-              According to the user the most desired solution is ${most_desired_sol} , least desired solution is ${least_desired_sol} ,
-              the user suggest the following as posssible compromised solution ${compromised_sol}. Apply your skills as an expert of
-              conflict resolution strategies to provide the user 2 options ( A & B ) to solve this conflict.After the user picks A or B ,
-              role play a converation (as the user's daughter) with the user to train the user to solve the conflict. Start the chat by providing the user options A and B.
-              wait for the user to choose and then for the rest of the chat act as the user's daughter. Don't do the entire converation on you own, wait for the user to respond`,
-              role: "system"
-            }
-        ];
-
-        let selectedModel = "";
-        const engine = new webllm.MLCEngine();
 
         function logError(errorSource, error) {
             console.error(errorSource, error);
@@ -249,161 +251,54 @@
 
         function logStatus(message) {
             console.log("Status:", message);
-            downloadStatusDiv.textContent = message;
+            mainStatusDiv.textContent = message;
         }
 
-
-        function updateEngineInitProgressCallback(report) {
-            downloadStatusDiv.textContent = report.text;
-            if (report.progress === 1) {
-                 downloadStatusDiv.textContent = `Model ${selectedModel} loaded. Waiting for initial advice...`;
-            }
-        }
-        engine.setInitProgressCallback(updateEngineInitProgressCallback);
-
-        async function sendInitialBotMessage() {
-            logStatus("LLM is generating initial advice...");
-            sendButton.disabled = true;
-            userInput.disabled = true;
-            userInput.setAttribute("placeholder", "Generating initial advice...");
-
-            const typingMessage = { role: "assistant", content: "▍" };
-            displayMessage(typingMessage);
-
-            let accumulatedMessage = "";
-            let animationFrameId;
-            let cursorVisible = true;
-            const typingIndicator = () => {
-                if (sendButton.disabled === false && userInput.disabled === false) {
-                    updateLastBotMessage(accumulatedMessage);
-                    if (animationFrameId) cancelAnimationFrame(animationFrameId);
-                    return;
-                }
-                updateLastBotMessage(accumulatedMessage + (cursorVisible ? "▍" : ""));
-                cursorVisible = !cursorVisible;
-                animationFrameId = requestAnimationFrame(typingIndicator);
-            };
-            animationFrameId = requestAnimationFrame(typingIndicator);
-
-            const messagesForAPICall = [
-                chatMessages[0],
-                { role: "user", content: "Please provide the two options (A & B) to solve the conflict as instructed." }
-            ];
-
-            await streamGenerate(
-                messagesForAPICall,
-                (partialMessage) => {
-                    accumulatedMessage = partialMessage;
-                },
-                async (finalMessage) => {
-                    if (animationFrameId) cancelAnimationFrame(animationFrameId);
-                    updateLastBotMessage(finalMessage);
-                    chatMessages.push({ role: "assistant", content: finalMessage });
-
-                    sendButton.disabled = false;
-                    userInput.disabled = false;
-                    userInput.setAttribute("placeholder", "Type your message...");
-                    userInput.focus();
-                    logStatus(`Initial advice received. You can now chat.`);
-                    try {
-                        const statsText = await engine.runtimeStatsText();
-                        chatStatsDiv.textContent = statsText;
-                        chatStatsDiv.classList.remove("hidden");
-                    } catch (err) {
-                        logError("RuntimeStats (Initial)", err);
-                        chatStatsDiv.textContent = "Could not retrieve runtime stats.";
-                        chatStatsDiv.classList.remove("hidden");
-                    }
-                }
-            );
+        function updateChatUIReadyState(ready) {
+            isLLMReady = ready;
+            userInput.disabled = !ready;
+            sendButton.disabled = !ready;
+            userInput.setAttribute("placeholder", ready ? "Type your message..." : "LLM not ready. Select provider and setup.");
+            if (ready) userInput.focus();
         }
 
-
-        async function initializeWebLLMEngine() {
-            sendButton.disabled = true;
-            userInput.disabled = true;
-            downloadButton.disabled = true;
-            downloadStatusDiv.textContent = "Initializing WebLLM engine...";
-            downloadStatusDiv.classList.remove("hidden");
+        function clearChat() {
+            chatBox.innerHTML = "";
+            displayedChatMessages = [];
+            webLlmChatHistory = [];
+            geminiApiHistory = [];
             chatStatsDiv.classList.add("hidden");
-
-            selectedModel = modelSelection.value;
-            if (!selectedModel) {
-                logError("Initialization", "No model selected.");
-                downloadStatusDiv.textContent = "Error: No model selected.";
-                downloadButton.disabled = false;
-                return;
-            }
-
-            const config = { temperature: 0.7, top_p: 0.95 };
-            const chatOpts = {};
-
-            try {
-                logStatus(`Loading model: ${selectedModel}...`);
-                await engine.reload(selectedModel, chatOpts, config);
-                logStatus(`Model ${selectedModel} loaded. Generating initial conflict resolution advice...`);
-                await sendInitialBotMessage();
-                downloadButton.disabled = false;
-
-
-            } catch (err) {
-                logError("Engine.reload or InitialMessage", err);
-                logStatus(`Error loading model ${selectedModel} or getting initial advice. Check error log.`);
-                downloadButton.disabled = false;
-                userInput.disabled = true;
-                sendButton.disabled = true;
-            }
+            chatStatsDiv.textContent = "";
         }
 
-        async function streamGenerate(currentMessages, onUpdate, onFinish) {
-            try {
-                let curMessage = "";
-                const completion = await engine.chat.completions.create({
-                    stream: true,
-                    messages: currentMessages,
-                });
-
-                for await (const chunk of completion) {
-                    const curDelta = chunk.choices[0]?.delta?.content || "";
-                    if (curDelta) {
-                        curMessage += curDelta;
-                    }
-                    onUpdate(curMessage);
-                }
-                await onFinish(curMessage);
-            } catch (err) {
-                logError("StreamingGeneration", err);
-                await onFinish("Sorry, an error occurred during generation.");
-            }
-        }
-
-        function displayMessage(message) {
+        // --- UI Display Functions ---
+        function displayChatMessageToUI(text, role, isError = false) {
             const container = document.createElement("div");
             container.classList.add("message-container");
-            const newMessageDiv = document.createElement("div");
-            newMessageDiv.classList.add("message");
+            const messageDiv = document.createElement("div");
+            messageDiv.classList.add("message");
 
-            let content = message.content.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
+            let content = text.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
             content = content.replace(/\*(.*?)\*/g, '<em>$1</em>');
             content = content.replace(/\n/g, '<br>');
+            messageDiv.innerHTML = content;
 
-            newMessageDiv.innerHTML = content;
-
-            if (message.role === "user") {
+            if (role === "user") {
                 container.classList.add("user");
-            } else {
+            } else { // assistant or model
                 container.classList.add("assistant");
-                const uniqueId = "bot-message-" + Date.now() + Math.random().toString(36).substring(2,7);
-                newMessageDiv.id = uniqueId;
-                container.dataset.botMessageId = uniqueId;
+            }
+            if (isError) {
+                container.classList.add("error");
             }
 
-            container.appendChild(newMessageDiv);
+            container.appendChild(messageDiv);
             chatBox.appendChild(container);
             chatBox.scrollTop = chatBox.scrollHeight;
+            displayedChatMessages.push({ role, content: text }); // Add to display history
         }
 
-        function updateLastBotMessage(content) {
+        function updateLastBotMessageInUI(content) {
             const lastBotMessageContainer = chatBox.querySelector('.message-container.assistant:last-child');
             if (lastBotMessageContainer) {
                 const messageDiv = lastBotMessageContainer.querySelector('.message');
@@ -417,136 +312,78 @@
             }
         }
 
-        async function handleSendMessage() {
-            const inputText = userInput.value.trim();
-            if (inputText.length === 0 || sendButton.disabled) {
-                return;
-            }
+        // --- LLM Provider Switching ---
+        function switchLlmProvider(provider) {
+            currentLlmProvider = provider;
+            clearChat();
+            updateChatUIReadyState(false); // LLM becomes not ready until setup for the new provider
 
-            sendButton.disabled = true;
-            userInput.disabled = true;
-            userInput.setAttribute("placeholder", "Generating response...");
-
-            const userMessage = { role: "user", content: inputText };
-            chatMessages.push(userMessage);
-            displayMessage(userMessage);
-            userInput.value = "";
-
-            const typingMessage = { role: "assistant", content: "▍" };
-            displayMessage(typingMessage);
-
-            let accumulatedMessage = "";
-            let animationFrameId;
-            let cursorVisible = true;
-            const typingIndicator = () => {
-                if (sendButton.disabled === false && userInput.disabled === false) {
-                    updateLastBotMessage(accumulatedMessage);
-                     if (animationFrameId) cancelAnimationFrame(animationFrameId);
-                    return;
-                }
-                updateLastBotMessage(accumulatedMessage + (cursorVisible ? "▍" : ""));
-                cursorVisible = !cursorVisible;
-                animationFrameId = requestAnimationFrame(typingIndicator);
-            };
-            animationFrameId = requestAnimationFrame(typingIndicator);
-
-            await streamGenerate(
-                chatMessages,
-                (partialMessage) => {
-                    accumulatedMessage = partialMessage;
-                },
-                async (finalMessage) => {
-                    if (animationFrameId) cancelAnimationFrame(animationFrameId);
-                    updateLastBotMessage(finalMessage);
-                    chatMessages.push({ role: "assistant", content: finalMessage });
-
-                    sendButton.disabled = false;
-                    userInput.disabled = false;
-                    userInput.setAttribute("placeholder", "Type your message...");
-                    userInput.focus();
-
-                    try {
-                        const statsText = await engine.runtimeStatsText();
-                        chatStatsDiv.textContent = statsText;
-                        chatStatsDiv.classList.remove("hidden");
-                    } catch (err) {
-                        logError("RuntimeStats", err);
-                        chatStatsDiv.textContent = "Could not retrieve runtime stats.";
-                        chatStatsDiv.classList.remove("hidden");
+            if (provider === "webllm") {
+                webLlmConfigSection.classList.remove("hidden");
+                geminiConfigSection.classList.add("hidden");
+                logStatus("WebLLM selected. Populate models if needed, then Load Model.");
+                if (!webLlmEngine) { // Only populate if not already done
+                    populateWebLLMModels();
+                } else if (webLlmEngine && webLlmEngine.pipeline && webLlmEngine.pipeline.modelId) {
+                     // If WebLLM engine was previously loaded for a model, consider it ready.
+                    logStatus(`WebLLM selected. Model ${webLlmEngine.pipeline.modelId} is loaded. Ready for initial message.`);
+                    // No, don't auto-send initial message. User clicks send or it's done after load.
+                    // For now, user needs to effectively "Load Model" again or we re-trigger sendInitialBotMessage
+                    // Simplest: treat as not ready, make user click Load Model again or handle state better.
+                    // For now, let's assume they might need to click "Load Model" to kick things off or we auto-send.
+                    // Let's stick to: if engine exists and has a model, it's ready.
+                    // No, the initial bot message is key. So if we switch back, it needs to be re-sent.
+                    // This means we need a 'start chat' button or automatically do it.
+                    // For simplicity, let's make the Load Model button the trigger for initial message too.
+                    downloadButton.disabled = false; // Allow reloading current or new model
+                    mainStatusDiv.textContent = `WebLLM selected. Model: ${webLlmSelectedModel || 'None loaded'}. Click 'Load Model' to start.`;
+                    if(webLlmSelectedModel && webLlmEngine && webLlmEngine.pipeline) {
+                        // If a model was loaded, allow sending initial message for it.
+                        // This is tricky. Let's just say: if you switch, WebLLM state is reset until "Load Model"
+                        // updateChatUIReadyState(true);
+                        // sendInitialBotMessage(); // This might be too eager
                     }
                 }
-            );
-        }
-
-        function getModelEstimatedSizeMB(modelInfo) {
-            if (modelInfo && typeof modelInfo.vram_required_MB === 'number' && modelInfo.vram_required_MB > 0) {
-                return modelInfo.vram_required_MB;
+            } else if (provider === "gemini") {
+                webLlmConfigSection.classList.add("hidden");
+                geminiConfigSection.classList.remove("hidden");
+                loadGeminiApiKey(); // This will update status and UI readiness
             }
-            logError("getModelEstimatedSizeMB Warning", `vram_required_MB not found or invalid for ${modelInfo.model_id}. Using a default heuristic estimate.`);
-            const modelIdLowerCase = modelInfo.model_id.toLowerCase();
-            if (modelIdLowerCase.includes("7b") || modelIdLowerCase.includes("8b")) return 4000;
-            if (modelIdLowerCase.includes("3b") || modelIdLowerCase.includes("4b")) return 2000;
-            if (modelIdLowerCase.includes("qwen2.5-0.5b")) return 350;
-            if (modelIdLowerCase.includes("phi-2") && modelIdLowerCase.includes("q0f16")) return 5500;
-            if (modelIdLowerCase.includes("phi-2") && modelIdLowerCase.includes("q0f32")) return 5500;
-            if (modelIdLowerCase.includes("phi-2")) return 1500;
-            if (modelIdLowerCase.includes("1b") || modelIdLowerCase.includes("2b")) return 1000;
-            return 1500;
         }
 
-        async function populateModels() {
-            modelSelection.innerHTML = "";
-            let availableCacheMB = 2000;
-            let cacheQuotaMB = 4000;
+        providerWebLLMRadio.addEventListener('change', () => switchLlmProvider("webllm"));
+        providerGeminiRadio.addEventListener('change', () => switchLlmProvider("gemini"));
 
+        // --- WebLLM Specific Functions ---
+        function updateWebLLMEngineInitProgressCallback(report) {
+            mainStatusDiv.textContent = report.text;
+            if (report.progress === 1) {
+                 mainStatusDiv.textContent = `Model ${webLlmSelectedModel} loaded. Waiting for initial advice...`;
+            }
+        }
+
+        async function populateWebLLMModels() {
+            modelSelection.innerHTML = "";
+            let availableCacheMB = 2000; let cacheQuotaMB = 4000;
             if (navigator.storage && navigator.storage.estimate) {
                 try {
                     const estimate = await navigator.storage.estimate();
                     cacheQuotaMB = estimate.quota ? estimate.quota / (1024 * 1024) : 4000;
                     const usageMB = estimate.usage ? estimate.usage / (1024 * 1024) : 0;
                     availableCacheMB = cacheQuotaMB - usageMB;
-                    logStatus(`Storage: ${usageMB.toFixed(0)}MB used of ${cacheQuotaMB.toFixed(0)}MB. Available: ${availableCacheMB.toFixed(0)}MB.`);
-                } catch (err) {
-                    logError("StorageEstimate", err);
-                    logStatus("Could not estimate storage. Using defaults. Model filtering may be less accurate.");
-                }
-            } else {
-                logStatus("Storage API not supported. Using defaults. Model filtering may be less accurate.");
+                    logStatus(`WebLLM Storage: ${usageMB.toFixed(0)}MB used of ${cacheQuotaMB.toFixed(0)}MB. Available: ${availableCacheMB.toFixed(0)}MB.`);
+                } catch (err) { logError("WebLLM StorageEstimate", err); }
             }
-
             const cacheThresholdMB = Math.max(availableCacheMB * 0.8, 500);
-            logStatus(`Showing models estimated < ${cacheThresholdMB.toFixed(0)}MB (fit available storage).`);
 
-            const suitableModels = [];
             try {
                 if (!webllm.prebuiltAppConfig || !webllm.prebuiltAppConfig.model_list) {
-                    logError("PopulateModels", "WebLLM prebuiltAppConfig or model_list not available.");
-                    downloadStatusDiv.textContent = "Error: Could not retrieve model list from WebLLM.";
-                    downloadButton.disabled = true;
-                    return;
+                    throw new Error("WebLLM prebuiltAppConfig or model_list not available.");
                 }
-                const allModels = webllm.prebuiltAppConfig.model_list;
-
-                if (!allModels || allModels.length === 0) {
-                    logError("PopulateModels", "No prebuilt models found in config.");
-                    downloadStatusDiv.textContent = "Error: No models available from WebLLM config.";
-                    downloadButton.disabled = true;
-                    return;
-                }
-
-                allModels.forEach(modelInfo => {
-                    const estimatedSizeMB = getModelEstimatedSizeMB(modelInfo);
-                    console.log(`Model: ${modelInfo.model_id}, Declared VRAM: ${modelInfo.vram_required_MB || 'N/A'}MB, Filter VRAM: ${estimatedSizeMB}MB`);
-
-                    if (estimatedSizeMB < cacheThresholdMB) {
-                        suitableModels.push(modelInfo);
-                    } else {
-                        console.log(`Skipping ${modelInfo.model_id} - too large (Est. VRAM ${estimatedSizeMB}MB vs ${cacheThresholdMB.toFixed(0)}MB threshold)`);
-                    }
-                });
-
-                suitableModels.sort((a,b) => getModelEstimatedSizeMB(a) - getModelEstimatedSizeMB(b));
-
+                const suitableModels = webllm.prebuiltAppConfig.model_list.filter(modelInfo => {
+                    const estimatedSizeMB = getModelEstimatedSizeMB(modelInfo); // Use your existing helper
+                    return estimatedSizeMB < cacheThresholdMB;
+                }).sort((a,b) => getModelEstimatedSizeMB(a) - getModelEstimatedSizeMB(b));
 
                 if (suitableModels.length > 0) {
                     suitableModels.forEach(modelInfo => {
@@ -556,47 +393,367 @@
                         option.textContent = `${modelInfo.model_id} (${vramDisplay})`;
                         modelSelection.appendChild(option);
                     });
-
-                    let defaultModelIdToSet = "";
-                    const preferredDefaults = [
-                        "Qwen2.5-0.5B-Instruct-q4f32_1-MLC",
-                        "TinyLlama-1.1B-Chat-v1.0-q4f32_1-MLC",
-                        "gemma-2b-it-q4f32_1-MLC",
-                        "Llama-3.1-8B-Instruct-q4f32_1-MLC-1k",
-                        "Llama-3-8B-Instruct-q4f32_1-MLC-1k",
-                    ];
-
-                    for (const prefModel of preferredDefaults) {
-                        if (suitableModels.find(m => m.model_id === prefModel)) {
-                            defaultModelIdToSet = prefModel;
-                            break;
-                        }
-                    }
-
-                    if (!defaultModelIdToSet && suitableModels.length > 0) {
-                        defaultModelIdToSet = suitableModels[0].model_id;
-                    }
-
-                    if (defaultModelIdToSet) {
-                       modelSelection.value = defaultModelIdToSet;
-                    }
-
-                    selectedModel = modelSelection.value;
+                    const preferredDefaults = ["Qwen2.5-0.5B-Instruct-q4f32_1-MLC", "TinyLlama-1.1B-Chat-v1.0-q4f32_1-MLC"];
+                    let defaultModelIdToSet = preferredDefaults.find(p => suitableModels.some(m => m.model_id === p)) || suitableModels[0].model_id;
+                    if (defaultModelIdToSet) modelSelection.value = defaultModelIdToSet;
                     downloadButton.disabled = false;
-                    logStatus(`Select model (default: ${selectedModel || 'None'}) and click "Load Model". ${suitableModels.length} models fit criteria.`);
+                    logStatus(`WebLLM: Select model (default: ${modelSelection.value}) and click "Load Model".`);
                 } else {
-                    logError("PopulateModels", "No models meet the VRAM/cache size criteria.");
-                    downloadStatusDiv.textContent = `No models small enough (Est. VRAM < ${cacheThresholdMB.toFixed(0)}MB). Try clearing browser cache or check error log.`;
-                    downloadButton.disabled = true;
+                    throw new Error(`No WebLLM models small enough (Est. VRAM < ${cacheThresholdMB.toFixed(0)}MB).`);
                 }
             } catch (err) {
-                logError("PopulateModels", err);
-                downloadStatusDiv.textContent = "Error fetching or filtering model list. Check console.";
+                logError("WebLLM PopulateModels", err);
+                mainStatusDiv.textContent = "Error fetching or filtering WebLLM model list.";
                 downloadButton.disabled = true;
             }
         }
+        function getModelEstimatedSizeMB(modelInfo) { // Copied from your original
+            if (modelInfo && typeof modelInfo.vram_required_MB === 'number' && modelInfo.vram_required_MB > 0) return modelInfo.vram_required_MB;
+            const modelIdLowerCase = modelInfo.model_id.toLowerCase();
+            if (modelIdLowerCase.includes("7b") || modelIdLowerCase.includes("8b")) return 4000;
+            if (modelIdLowerCase.includes("3b") || modelIdLowerCase.includes("4b")) return 2000;
+            if (modelIdLowerCase.includes("qwen2.5-0.5b")) return 350;
+            if (modelIdLowerCase.includes("1b") || modelIdLowerCase.includes("2b")) return 1000;
+            return 1500;
+        }
 
+        async function initializeWebLLMEngine() {
+            if (currentLlmProvider !== "webllm") return;
+            updateChatUIReadyState(false);
+            downloadButton.disabled = true;
+            mainStatusDiv.textContent = "Initializing WebLLM engine...";
+
+            webLlmSelectedModel = modelSelection.value;
+            if (!webLlmSelectedModel) {
+                logError("WebLLM Init", "No model selected.");
+                mainStatusDiv.textContent = "Error: No WebLLM model selected.";
+                downloadButton.disabled = false;
+                return;
+            }
+
+            if (!webLlmEngine) {
+                webLlmEngine = new webllm.MLCEngine();
+                webLlmEngine.setInitProgressCallback(updateWebLLMEngineInitProgressCallback);
+            }
+            
+            webLlmChatHistory = [{ role: "system", content: initialSystemPromptContent }]; // Reset history with system prompt
+
+            const config = { temperature: 0.7, top_p: 0.95 };
+            try {
+                logStatus(`Loading WebLLM model: ${webLlmSelectedModel}...`);
+                await webLlmEngine.reload(webLlmSelectedModel, {}, config);
+                logStatus(`WebLLM model ${webLlmSelectedModel} loaded. Generating initial advice...`);
+                await sendInitialBotMessage(); // This will now check provider
+                // downloadButton will be re-enabled by sendInitialBotMessage completion logic (or its error handling)
+            } catch (err) {
+                logError("WebLLM Engine.reload", err);
+                logStatus(`Error loading WebLLM model ${webLlmSelectedModel}. Check error log.`);
+                downloadButton.disabled = false;
+            }
+        }
         downloadButton.addEventListener("click", initializeWebLLMEngine);
+
+
+        // --- Gemini Specific Functions ---
+        function loadGeminiApiKey() {
+            const storedKey = localStorage.getItem(GEMINI_API_KEY_STORAGE_KEY);
+            if (storedKey) {
+                geminiApiKeyInput.value = storedKey;
+                geminiApiKey = storedKey;
+                geminiApiKeyStatus.textContent = 'API Key loaded. Test it or start chatting.';
+                geminiConfigSection.classList.remove("key-needed");
+                // Automatically test if a key is loaded? Or wait for user action.
+                // For now, let's assume it's valid until tested otherwise or if user wants to start.
+                isGeminiKeyValid = true; // Assume valid for now if loaded, test will confirm
+                updateChatUIReadyState(true); // Allow chat if key is present
+                sendInitialBotMessage(); // Attempt to send initial message
+            } else {
+                geminiApiKeyStatus.textContent = 'No API Key stored. Please enter one.';
+                geminiConfigSection.classList.add("key-needed");
+                isGeminiKeyValid = false;
+                updateChatUIReadyState(false);
+            }
+        }
+
+        async function testAndSaveGeminiApiKey(isTestOnly = false) {
+            const key = geminiApiKeyInput.value.trim();
+            if (!key) {
+                geminiApiKeyStatus.textContent = 'API Key cannot be empty.';
+                logError("Gemini Key", "API Key cannot be empty.");
+                isGeminiKeyValid = false;
+                updateChatUIReadyState(false);
+                return false;
+            }
+
+            logStatus("Validating Gemini API Key...");
+            geminiApiKeyStatus.textContent = "Validating Key...";
+            updateChatUIReadyState(false); // Disable chat while testing
+
+            try {
+                // Use a simple, non-conversational call for validation
+                const testApiUrl = `${GEMINI_API_BASE_URL}${GEMINI_MODEL_NAME}:generateContent?key=${key}`;
+                const response = await fetch(testApiUrl, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ "contents": [{"parts": [{"text": "Hi"}]}] }) // Minimal prompt
+                });
+
+                if (response.ok) {
+                    geminiApiKeyStatus.textContent = 'API Key is valid!';
+                    if (!isTestOnly) {
+                        localStorage.setItem(GEMINI_API_KEY_STORAGE_KEY, key);
+                        geminiApiKey = key;
+                        geminiApiKeyStatus.textContent += ' Key Saved.';
+                        logStatus("Gemini API Key saved and valid.");
+                    }
+                    isGeminiKeyValid = true;
+                    updateChatUIReadyState(true); // Enable chat
+                    sendInitialBotMessage(); // Kick off initial message
+                    return true;
+                } else {
+                    const errorData = await response.json();
+                    const errorMsg = `API Key validation failed: ${errorData.error?.message || response.statusText}`;
+                    geminiApiKeyStatus.textContent = errorMsg;
+                    logError("Gemini Key Validation", errorMsg);
+                    isGeminiKeyValid = false;
+                    return false;
+                }
+            } catch (error) {
+                const errorMsg = `Error during API key validation: ${error.message}`;
+                geminiApiKeyStatus.textContent = errorMsg;
+                logError("Gemini Key Validation Error", error);
+                isGeminiKeyValid = false;
+                return false;
+            } finally {
+                 // Re-enable send button if validation passed, or keep disabled if failed
+                updateChatUIReadyState(isGeminiKeyValid);
+                if (!isGeminiKeyValid) logStatus("Gemini API Key validation failed or error occurred.");
+            }
+        }
+        saveGeminiApiKeyButton.addEventListener('click', () => testAndSaveGeminiApiKey(false));
+        testGeminiApiKeyButton.addEventListener('click', () => testAndSaveGeminiApiKey(true));
+
+        clearGeminiApiKeyButton.addEventListener('click', () => {
+            localStorage.removeItem(GEMINI_API_KEY_STORAGE_KEY);
+            geminiApiKey = null;
+            geminiApiKeyInput.value = '';
+            geminiApiKeyStatus.textContent = 'API Key cleared. Enter a new one to use Gemini.';
+            logStatus("Gemini API Key cleared.");
+            isGeminiKeyValid = false;
+            updateChatUIReadyState(false);
+            clearChat();
+        });
+
+
+        // --- Unified Chat Logic ---
+        async function sendInitialBotMessage() {
+            if (!isLLMReady && currentLlmProvider === "webllm") { // For WebLLM, Load Model button triggers this.
+                 // If WebLLM and not ready, means model isn't loaded. initializeWebLLMEngine handles it.
+                return;
+            }
+             if (currentLlmProvider === "gemini" && !isGeminiKeyValid) {
+                logStatus("Gemini API key not valid or not set. Cannot send initial message.");
+                return;
+            }
+
+            logStatus("LLM is generating initial advice...");
+            updateChatUIReadyState(false); // Disable input during generation
+            userInput.setAttribute("placeholder", "Generating initial advice...");
+            clearChat(); // Clear previous messages before initial one
+
+            displayChatMessageToUI("▍", "assistant"); // Typing indicator
+
+            let accumulatedMessage = "";
+            let animationFrameId;
+            let cursorVisible = true;
+            const typingIndicator = () => {
+                if (isLLMReady) { // Check general readiness flag
+                    updateLastBotMessageInUI(accumulatedMessage);
+                    if (animationFrameId) cancelAnimationFrame(animationFrameId);
+                    return;
+                }
+                updateLastBotMessageInUI(accumulatedMessage + (cursorVisible ? "▍" : ""));
+                cursorVisible = !cursorVisible;
+                animationFrameId = requestAnimationFrame(typingIndicator);
+            };
+            animationFrameId = requestAnimationFrame(typingIndicator);
+
+            try {
+                let finalMessageContent = "";
+                if (currentLlmProvider === "webllm") {
+                    // WebLLM history already has system prompt from initializeWebLLMEngine
+                    const messagesForAPICall = [
+                        ...webLlmChatHistory, // Should contain only system prompt at this stage
+                        { role: "user", content: instructionForInitialOptions }
+                    ];
+                    webLlmChatHistory.push({ role: "user", content: instructionForInitialOptions }); // Add to API history
+
+                    const stream = await webLlmEngine.chat.completions.create({
+                        stream: true, messages: messagesForAPICall,
+                    });
+                    for await (const chunk of stream) {
+                        const curDelta = chunk.choices[0]?.delta?.content || "";
+                        if (curDelta) accumulatedMessage += curDelta;
+                    }
+                    finalMessageContent = accumulatedMessage;
+                    webLlmChatHistory.push({ role: "assistant", content: finalMessageContent });
+                    const statsText = await webLlmEngine.runtimeStatsText();
+                    chatStatsDiv.textContent = statsText;
+                    chatStatsDiv.classList.remove("hidden");
+
+                } else if (currentLlmProvider === "gemini") {
+                    geminiApiHistory = []; // Clear previous Gemini history for a fresh start
+                    // For Gemini, send system prompt + initial instruction
+                    // Note: Using systemInstruction which is cleaner if model supports it
+                    const requestBody = {
+                        contents: [{ role: "user", parts: [{ text: instructionForInitialOptions }] }],
+                        systemInstruction: { parts: [{ text: initialSystemPromptContent }] },
+                        generationConfig: { temperature: 0.7, topP: 0.95, maxOutputTokens: 2048 }
+                    };
+                    geminiApiHistory.push({ role: "user", parts: [{ text: instructionForInitialOptions }] }); // Add to API history
+
+                    const response = await fetch(`${GEMINI_API_BASE_URL}${GEMINI_MODEL_NAME}:generateContent?key=${geminiApiKey}`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(requestBody)
+                    });
+                    if (!response.ok) {
+                        const errorData = await response.json();
+                        throw new Error(`Gemini API Error: ${errorData.error?.message || response.statusText}`);
+                    }
+                    const data = await response.json();
+                    if (data.candidates && data.candidates[0]?.content?.parts[0]?.text) {
+                        finalMessageContent = data.candidates[0].content.parts[0].text;
+                        geminiApiHistory.push({ role: "model", parts: [{ text: finalMessageContent }] });
+                    } else {
+                        throw new Error("Invalid response structure from Gemini.");
+                    }
+                }
+
+                if (animationFrameId) cancelAnimationFrame(animationFrameId);
+                updateLastBotMessageInUI(finalMessageContent); // Final clean update
+                // The message is already in displayedChatMessages via updateLastBotMessageInUI indirectly through typing indicator's final call or direct update
+                // Ensure it is added to display history if not already handled perfectly by typing indicator.
+                // It's safer to ensure the displayedChatMessages array is up-to-date here if needed
+                if (displayedChatMessages.length > 0 && displayedChatMessages[displayedChatMessages.length -1].role === 'assistant') {
+                    displayedChatMessages[displayedChatMessages.length -1].content = finalMessageContent;
+                } else {
+                     // This case should ideally not happen if typing indicator worked before this point.
+                    // This would mean initial "▍" was never replaced by a real message.
+                    // displayChatMessageToUI(finalMessageContent, "assistant");
+                }
+
+
+                updateChatUIReadyState(true);
+                logStatus(`Initial advice received. You can now chat.`);
+
+            } catch (err) {
+                if (animationFrameId) cancelAnimationFrame(animationFrameId);
+                logError(`${currentLlmProvider} InitialBotMsg`, err);
+                updateLastBotMessageInUI(`Error getting initial advice: ${err.message}`);
+                displayChatMessageToUI(`Error getting initial advice: ${err.message}`, "assistant", true);
+                updateChatUIReadyState(false); // Keep UI disabled on error here. User might need to reconfigure.
+                if (currentLlmProvider === "webllm") downloadButton.disabled = false; // Allow retry for WebLLM
+            }
+        }
+
+
+        async function handleSendMessage() {
+            const inputText = userInput.value.trim();
+            if (inputText.length === 0 || !isLLMReady) return;
+
+            updateChatUIReadyState(false);
+            userInput.setAttribute("placeholder", "Generating response...");
+            displayChatMessageToUI(inputText, "user"); // Add user message to UI and display history
+            userInput.value = "";
+
+            displayChatMessageToUI("▍", "assistant"); // Typing indicator
+
+            let accumulatedMessage = "";
+            let animationFrameId;
+            let cursorVisible = true;
+            const typingIndicator = () => {
+                if (isLLMReady) {
+                    updateLastBotMessageInUI(accumulatedMessage);
+                    if (animationFrameId) cancelAnimationFrame(animationFrameId);
+                    return;
+                }
+                updateLastBotMessageInUI(accumulatedMessage + (cursorVisible ? "▍" : ""));
+                cursorVisible = !cursorVisible;
+                animationFrameId = requestAnimationFrame(typingIndicator);
+            };
+            animationFrameId = requestAnimationFrame(typingIndicator);
+
+            try {
+                let finalMessageContent = "";
+                if (currentLlmProvider === "webllm") {
+                    webLlmChatHistory.push({ role: "user", content: inputText });
+                    const stream = await webLlmEngine.chat.completions.create({
+                        stream: true, messages: webLlmChatHistory,
+                    });
+                    for await (const chunk of stream) {
+                        const curDelta = chunk.choices[0]?.delta?.content || "";
+                        if (curDelta) accumulatedMessage += curDelta;
+                    }
+                    finalMessageContent = accumulatedMessage;
+                    webLlmChatHistory.push({ role: "assistant", content: finalMessageContent });
+                    const statsText = await webLlmEngine.runtimeStatsText();
+                    chatStatsDiv.textContent = statsText;
+                    chatStatsDiv.classList.remove("hidden");
+
+                } else if (currentLlmProvider === "gemini") {
+                    geminiApiHistory.push({ role: "user", parts: [{ text: inputText }] });
+                    const requestBody = {
+                        contents: geminiApiHistory,
+                        systemInstruction: { parts: [{ text: initialSystemPromptContent }] }, // Always include system context
+                        generationConfig: { temperature: 0.7, topP: 0.95, maxOutputTokens: 2048 }
+                    };
+                    const response = await fetch(`${GEMINI_API_BASE_URL}${GEMINI_MODEL_NAME}:generateContent?key=${geminiApiKey}`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(requestBody)
+                    });
+                    if (!response.ok) {
+                        const errorData = await response.json();
+                        throw new Error(`Gemini API Error: ${errorData.error?.message || response.statusText}`);
+                    }
+                    const data = await response.json();
+                     if (data.candidates && data.candidates[0]?.content?.parts[0]?.text) {
+                        finalMessageContent = data.candidates[0].content.parts[0].text;
+                        geminiApiHistory.push({ role: "model", parts: [{ text: finalMessageContent }] });
+                    } else if (data.promptFeedback && data.promptFeedback.blockReason) {
+                        finalMessageContent = `Blocked by API: ${data.promptFeedback.blockReason}. Safety Ratings: ${data.promptFeedback.safetyRatings.map(r => `${r.category}_${r.probability}`).join(', ')}`;
+                        // Don't add to history as a valid model response if blocked this way
+                        logError("Gemini Response Blocked", finalMessageContent);
+                    }
+                     else {
+                        throw new Error("Invalid response structure from Gemini.");
+                    }
+                }
+
+                if (animationFrameId) cancelAnimationFrame(animationFrameId);
+                updateLastBotMessageInUI(finalMessageContent);
+                // Update the actual content in displayedChatMessages for the last assistant message
+                if (displayedChatMessages.length > 0 && displayedChatMessages[displayedChatMessages.length -1].role === 'assistant') {
+                    displayedChatMessages[displayedChatMessages.length -1].content = finalMessageContent;
+                }
+
+                updateChatUIReadyState(true);
+
+            } catch (err) {
+                if (animationFrameId) cancelAnimationFrame(animationFrameId);
+                logError(`${currentLlmProvider} SendMessage`, err);
+                updateLastBotMessageInUI(`Error generating response: ${err.message}`);
+                 // Update the actual content in displayedChatMessages for the last assistant message
+                if (displayedChatMessages.length > 0 && displayedChatMessages[displayedChatMessages.length -1].role === 'assistant') {
+                    displayedChatMessages[displayedChatMessages.length -1].content = `Error: ${err.message}`;
+                    const lastMsgContainer = chatBox.querySelector('.message-container.assistant:last-child');
+                    if (lastMsgContainer) lastMsgContainer.classList.add('error');
+                }
+                updateChatUIReadyState(true); // Re-enable for user to try again or fix
+            }
+        }
+
         sendButton.addEventListener("click", handleSendMessage);
         userInput.addEventListener("keypress", (event) => {
             if (event.key === "Enter" && !event.shiftKey && !sendButton.disabled) {
@@ -605,13 +762,9 @@
             }
         });
 
+        // Initial setup
         (async () => {
-            try {
-                await populateModels();
-            } catch (e) {
-                logError("Initial Model Population", e);
-                downloadStatusDiv.textContent = "Failed to populate models. Check error log.";
-            }
+            switchLlmProvider("webllm"); // Default to WebLLM
         })();
 
     </script>
