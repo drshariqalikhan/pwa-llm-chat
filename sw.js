@@ -123,7 +123,7 @@ self.addEventListener('fetch', event => {
                 // For non-navigation requests, failing usually means the resource is unavailable.
                 // You might return a placeholder for images, or just let the browser error propagate.
                 // Throwing an error here will result in a browser network error for the resource.
-                // return new Response(`Network error for ${event.request.url}`, {status: 408, statusText: "Network request failed"});
+                // retur new Response(`Network error for ${event.request.url}`, {status: 408, statusText: "Network request failed"});
             });
         })
     );
