@@ -1,6 +1,6 @@
 // sw.js
 
-// IMPORTANT: Manually update this version string when you make changes to sw.js or critical app assets (like index.html)
+// IMPORANT: Manually update this version string when you make changes to sw.js or critical app assets (like index.html)
 const SW_VERSION = 'v1.0.3'; // Or increment if you've changed sw.js or index.html significantly
 const CACHE_PREFIX = 'webllm-chat-pwa-cache';
 const CACHE_NAME = `${CACHE_PREFIX}-${SW_VERSION}`;
