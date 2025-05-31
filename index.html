@@ -1,146 +1,354 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" data-theme="dark">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-    <title>LLM Conflict Chat</title>
-    <meta name="description" content="AI-powered conflict resolution chat, choose your LLM.">
-    <meta name="theme-color" content="#4CAF50">
+    <title>Difficult Conversations Simulator</title>
+
+    <meta name="description" content="Practice difficult conversations with an AI simulator.">
+    <meta name="theme-color" content="#363636"> <!-- Dark theme color -->
     <meta name="apple-mobile-web-app-capable" content="yes">
-    <meta name="apple-mobile-web-app-status-bar-style" content="default">
-    <meta name="apple-mobile-web-app-title" content="LLM Chat">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="DiffConvSim">
+
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bulma@1.0.4/css/bulma.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+
 
     <style>
-        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol"; display: flex; flex-direction: column; align-items: center; padding: 20px; background-color: #f4f4f4; margin: 0; min-height: 100vh; box-sizing: border-box; }
-        #appContainer { width: 90%; max-width: 700px; background-color: #fff; border-radius: 8px; box-shadow: 0 0 10px rgba(0,0,0,0.1); padding: 20px; display: flex; flex-direction: column; }
-        h1 { font-size: 1.5em; text-align: center; color: #333; margin-top:0; margin-bottom: 15px; }
+        /* Global Styles & Dark Mode defaults from Bulma */
+        html[data-theme="dark"] {
+            /* Bulma 1.0 uses CSS variables for theming. This attribute activates its dark mode. */
+            /* You can further customize dark theme variables here if needed */
+        }
+        body {
+            transition: background-color 0.3s ease, color 0.3s ease;
+            overflow-x: hidden; /* Prevent horizontal scroll during transitions */
+            padding-top: 3.25rem; /* Height of Bulma navbar */
+            min-height: 100vh;
+        }
 
-        .config-section { margin-bottom: 15px; padding: 10px; border: 1px solid #e0e0e0; border-radius: 5px; background-color: #f9f9f9; }
-        .config-section label { font-weight: bold; margin-right: 8px; }
-        .config-section input[type="radio"] { margin-right: 3px; }
-        .config-section input[type="radio"] + label { font-weight: normal; margin-right: 15px;}
+        .page {
+            display: none;
+            opacity: 0;
+            transition: opacity 0.4s ease-in-out;
+            width: 100%;
+            min-height: calc(100vh - 3.25rem); /* Full height minus navbar */
+            box-sizing: border-box;
+        }
+        .page.is-active {
+            display: flex; /* Using flex for centering content */
+            flex-direction: column;
+            opacity: 1;
+        }
 
-        #geminiConfigSection input[type="password"],
-        #geminiConfigSection input[type="text"] { width: calc(100% - 22px); padding: 8px; margin-bottom: 8px; border: 1px solid #ccc; border-radius: 4px; box-sizing: border-box; }
-        #geminiConfigSection button { padding: 8px 12px; background-color: #007bff; color: white; border: none; border-radius: 4px; cursor: pointer; margin-right: 5px; font-size: 0.9em; }
-        #geminiConfigSection button:hover { background-color: #0056b3; }
-        .api-key-status { font-size: 0.85em; color: #555; margin-top: 5px; }
+        /* Splash Screen */
+        #splash-screen {
+            justify-content: center;
+            align-items: center;
+            text-align: center;
+            background-color: hsl(0, 0%, 7%); /* Very dark for splash */
+            color: hsl(0, 0%, 96%);
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            z-index: 1000;
+            padding-top: 0; /* Override body padding-top for full screen */
+            min-height: 100vh;
+        }
+        #splash-screen .title {
+            font-size: 2.5rem;
+            color: hsl(0, 0%, 96%);
+            animation: fadeInScaleUp 1.5s ease-out forwards;
+        }
+        @keyframes fadeInScaleUp {
+            0% { opacity: 0; transform: scale(0.8); }
+            100% { opacity: 1; transform: scale(1); }
+        }
 
-        #webLlmConfigSection #controls { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; }
-        #webLlmConfigSection #controls label { margin-right: 5px; font-size: 0.9em; }
-        #model-selection { padding: 8px; border-radius: 4px; border: 1px solid #ddd; flex-grow: 1; min-width: 180px; font-size: 0.9em; }
+        /* Navbar */
+        .navbar.is-fixed-top {
+            box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+        }
+        .navbar-brand .navbar-item img {
+            max-height: 2.5rem; /* Adjust logo size */
+        }
+        .app-title-navbar {
+            font-weight: bold;
+        }
 
-        #download, #send { padding: 10px 15px; background-color: #4CAF50; color: white; border: none; cursor: pointer; border-radius: 4px; font-size: 0.9em; }
-        #download:disabled, #send:disabled { background-color: #ccc; cursor: not-allowed; }
+        /* Home Page Specifics */
+        #home-page .section {
+            width: 100%;
+            max-width: 700px; /* Content max width */
+            margin: 0 auto; /* Center content */
+            padding: 1.5rem;
+        }
+         #home-page .button-container {
+            margin-top: 1.5rem;
+            text-align: center;
+        }
 
-        #chat-box { height: 350px; border: 1px solid #ddd; overflow-y: auto; padding: 10px; margin-bottom: 10px; background-color: #f9f9f9; flex-grow: 1; }
-        .message-container { margin-bottom: 10px; display: flex; }
-        .message { padding: 10px; border-radius: 7px; max-width: 85%; word-wrap: break-word; line-height: 1.4; font-size: 0.95em; }
-        .message-container.user .message { background-color: #e1f5fe; color: #333; }
-        .message-container.assistant .message { background-color: #e8f5e9; color: #333; }
-        .message-container.error .message { background-color: #ffebee; color: #c62828; }
+        /* API Key Modal */
+        .modal-card-body .content ul {
+            margin-left: 1em; /* Indent instructions list */
+        }
+        .api-key-instructions {
+            font-size: 0.9rem;
+        }
+        #geminiApiKeyStatusModal { margin-top: 10px; }
 
 
-        #inputArea { display: flex; margin-bottom: 10px; }
-        #user-input { flex-grow: 1; padding: 10px; border: 1px solid #ddd; border-radius: 4px 0 0 4px; font-size: 0.95em; }
-        #user-input:disabled { background-color: #f0f0f0; }
+        /* Chat Page Specifics */
+        #chat-page-content {
+            display: flex;
+            flex-direction: column;
+            height: calc(100vh - 3.25rem); /* Full height minus navbar */
+            width: 100%;
+            max-width: 800px; /* Chat content max width */
+            margin: 0 auto; /* Center content */
+        }
+        #chat-box {
+            flex-grow: 1;
+            overflow-y: auto;
+            padding: 1rem;
+            border: 1px solid hsl(0, 0%, 29%); /* Darker border */
+            border-radius: 6px;
+            margin-bottom: 1rem;
+            background-color: hsl(0, 0%, 14%); /* Slightly lighter than body for contrast */
+        }
+        .message-container { margin-bottom: 10px; display: flex; animation: slideInUp 0.3s ease-out; }
+        @keyframes slideInUp {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .message-bubble { padding: 0.75rem 1rem; border-radius: 15px; max-width: 80%; word-wrap: break-word; line-height: 1.4; font-size: 0.95rem; }
+        .message-container.user { justify-content: flex-end; }
+        .message-container.user .message-bubble { background-color: hsl(204, 71%, 53%); color: white; border-bottom-right-radius: 5px; }
+        .message-container.assistant .message-bubble { background-color: hsl(0, 0%, 29%); color: hsl(0, 0%, 96%); border-bottom-left-radius: 5px; }
+        .message-container.error .message-bubble { background-color: hsl(348, 86%, 61%); color: white; }
 
-        #statusArea { margin-top: 5px; padding: 8px; font-style: italic; color: #555; background-color: #efefef; border-radius: 4px; font-size: 0.85em; }
-        #download-status { font-weight: bold; } /* Reused for general status */
-        #chat-stats { font-size: 0.8em; color: #333; margin-top: 5px; }
+        #input-area { display: flex; padding: 0 1rem 1rem 1rem; }
+        #user-input-chat { flex-grow: 1; margin-right: 0.5rem; }
+        #send-button-chat.is-loading {
+            pointer-events: none;
+        }
 
-        #errorLogContainer { margin-top: 15px; }
-        #errorLogTitle { font-weight: bold; margin-bottom: 5px; font-size: 0.9em; }
-        #errorLog { background-color: #ffdddd; border: 1px solid #ffaaaa; color: #d8000c; height: 100px; overflow-y: auto; padding: 10px; border-radius: 4px; font-size: 0.8em; white-space: pre-wrap; }
-        .log-entry { margin-bottom: 5px; }
-        .log-entry pre { margin-top: 3px; padding-left: 10px; font-size: 0.9em; color: #78000c;}
-        .hidden { display: none !important; }
+        /* Status & Error Log */
+        #mainStatusFooter {
+            font-size: 0.8rem;
+            padding: 0.5rem 1rem;
+            background-color: hsl(0, 0%, 21%);
+            text-align: center;
+        }
+        #errorLogContainer {
+            margin: 1rem;
+            font-size: 0.8em;
+        }
+        #errorLog {
+            max-height: 100px;
+            overflow-y: auto;
+            background-color: hsl(0, 0%, 18%);
+            border: 1px solid hsl(0, 0%, 29%);
+            padding: 0.5rem;
+            border-radius: 4px;
+            white-space: pre-wrap;
+        }
+        .log-entry { margin-bottom: 5px; color: hsl(348, 100%, 71%); }
+        .log-entry pre { color: hsl(348, 100%, 81%); white-space: pre-wrap; word-break: break-all;}
 
-         @media (max-width: 600px) {
-            body { padding: 10px; }
-            #appContainer { width: 100%; padding: 15px; margin-bottom: 0; }
-            h1 { font-size: 1.3em; }
-            #webLlmConfigSection #controls { flex-direction: column; align-items: stretch; }
-            #model-selection { min-width: 100%; }
-            #chat-box { height: calc(100vh - 420px); /* Adjust based on other elements */ }
+        /* Helper for hidden */
+        .is-hidden-completely { display: none !important; }
+        .is-visually-hidden {
+            position: absolute;
+            width: 1px;
+            height: 1px;
+            padding: 0;
+            margin: -1px;
+            overflow: hidden;
+            clip: rect(0, 0, 0, 0);
+            white-space: nowrap;
+            border: 0;
         }
     </style>
 </head>
 <body>
-    <div id="appContainer">
-        <h1>LLM Conflict Chat</h1>
 
-        <div id="llmProviderSelectorDiv" class="config-section">
-            <label>LLM Provider:</label>
-            <input type="radio" id="providerWebLLM" name="llmProvider" value="webllm" checked>
-            <label for="providerWebLLM">WebLLM (Local)</label>
-            <input type="radio" id="providerGemini" name="llmProvider" value="gemini">
-            <label for="providerGemini">Gemini API</label>
-        </div>
+    <!-- Splash Screen -->
+    <div id="splash-screen" class="page is-active">
+        <h1 class="title">Difficult Conversations Simulator</h1>
+    </div>
 
-        <div id="geminiConfigSection" class="config-section hidden">
-            <label for="geminiApiKeyInput">Gemini API Key:</label>
-            <input type="password" id="geminiApiKeyInput" placeholder="Enter your Gemini API Key">
-            <button id="saveGeminiApiKeyButton">Save Key</button>
-            <button id="testGeminiApiKeyButton">Test Key</button>
-            <button id="clearGeminiApiKeyButton">Clear Key</button>
-            <p id="geminiApiKeyStatus" class="api-key-status">Enter API key to use Gemini.</p>
-        </div>
-
-        <div id="webLlmConfigSection" class="config-section">
-            <div id="controls">
-                <label for="model-selection">Select Model:</label>
-                <select id="model-selection"></select>
-                <button id="download" disabled>Load Model</button>
+    <!-- Navigation Bar (Common for Home and Chat) -->
+    <nav id="app-navbar" class="navbar is-fixed-top is-dark" role="navigation" aria-label="main navigation">
+        <div class="container">
+            <div class="navbar-brand">
+                <a class="navbar-item" href="#">
+                    <!-- Placeholder for a logo if you have one -->
+                    <!-- <img src="logo.svg" width="28" height="28" alt="Logo"> -->
+                    <span class="icon is-medium mr-2"><i class="fas fa-comments"></i></span>
+                    <span class="app-title-navbar">DiffConvSim</span>
+                </a>
+                 <a role="button" class="navbar-burger" aria-label="menu" aria-expanded="false" data-target="navbarMenu">
+                    <span aria-hidden="true"></span>
+                    <span aria-hidden="true"></span>
+                    <span aria-hidden="true"></span>
+                    <span aria-hidden="true"></span>
+                </a>
+            </div>
+            <div id="navbarMenu" class="navbar-menu">
+                <div class="navbar-start">
+                    <a class="navbar-item" id="nav-home-button">Setup Conversation</a>
+                    <a class="navbar-item is-hidden-completely" id="nav-chat-button">Chat Simulator</a>
+                </div>
             </div>
         </div>
+    </nav>
 
-        <div id="statusArea">
-            <div id="mainStatus">Checking available storage and populating models...</div>
-            <div id="chat-stats" class="hidden"></div>
-        </div>
+    <!-- Home Page -->
+    <div id="home-page" class="page">
+        <section class="section">
+            <div class="container">
+                <h2 class="title is-4 has-text-centered">Setup Your Conversation Scenario</h2>
+                <p class="subtitle is-6 has-text-centered mb-5">Describe the situation to prepare the AI for the simulation.</p>
 
-        <div id="chat-box"></div>
+                <div class="field">
+                    <label class="label" for="conflict-details">Describe the Conflict/Difficult Conversation:</label>
+                    <div class="control">
+                        <textarea class="textarea" id="conflict-details" placeholder="e.g., I need to talk to my team member about their declining performance..." rows="4"></textarea>
+                    </div>
+                </div>
 
-        <div id="inputArea">
-            <input type="text" id="user-input" placeholder="Type your message..." disabled>
-            <button id="send" disabled>Send</button>
-        </div>
+                <div class="field">
+                    <label class="label" for="llm-character-role">Who should the AI pretend to be?</label>
+                    <div class="control">
+                        <input class="input" type="text" id="llm-character-role" placeholder="e.g., My underperforming team member, John">
+                    </div>
+                </div>
 
-        <div id="errorLogContainer">
-            <div id="errorLogTitle">Error Log:</div>
-            <div id="errorLog"></div>
+                <div class="field">
+                    <label class="label" for="most-desired-sol">What is your MOST desired outcome?</label>
+                    <div class="control">
+                        <input class="input" type="text" id="most-desired-sol" placeholder="e.g., John acknowledges the issues and commits to an improvement plan.">
+                    </div>
+                </div>
+
+                <div class="field">
+                    <label class="label" for="least-desired-sol">What is your LEAST desired outcome?</label>
+                    <div class="control">
+                        <input class="input" type="text" id="least-desired-sol" placeholder="e.g., John gets defensive, denies any problem, and our relationship sours.">
+                    </div>
+                </div>
+
+                <div class="field">
+                    <label class="label" for="compromised-sol">What's a potential COMPROMISED solution you might consider?</label>
+                    <div class="control">
+                        <input class="input" type="text" id="compromised-sol" placeholder="e.g., We agree on smaller, initial steps for improvement with a follow-up review.">
+                    </div>
+                </div>
+
+                <div class="button-container">
+                    <button class="button is-primary is-medium" id="proceed-to-chat-button">Proceed to Simulation</button>
+                </div>
+                 <div class="has-text-centered mt-4">
+                    <button class="button is-small" id="api-key-button-home">API Key Setup</button>
+                </div>
+            </div>
+        </section>
+    </div>
+
+    <!-- Chat Page -->
+    <div id="chat-page" class="page">
+        <div id="chat-page-content" class="container">
+            <div id="chat-box">
+                <!-- Messages will be appended here -->
+            </div>
+            <div id="input-area" class="field has-addons">
+                <div class="control is-expanded">
+                    <input class="input" type="text" id="user-input-chat" placeholder="Type your message..." disabled>
+                </div>
+                <div class="control">
+                    <button class="button is-info" id="send-button-chat" disabled>
+                        <span class="icon"><i class="fas fa-paper-plane"></i></span>
+                        <span>Send</span>
+                    </button>
+                </div>
+            </div>
         </div>
     </div>
 
+    <!-- API Key Modal -->
+    <div id="api-key-modal" class="modal">
+        <div class="modal-background"></div>
+        <div class="modal-card">
+            <header class="modal-card-head">
+                <p class="modal-card-title">Gemini API Key Setup</p>
+                <button class="delete" aria-label="close" id="close-api-modal-button"></button>
+            </header>
+            <section class="modal-card-body">
+                <div class="field">
+                    <label class="label" for="geminiApiKeyInputModal">Gemini API Key:</label>
+                    <div class="control has-icons-left">
+                        <input class="input" type="password" id="geminiApiKeyInputModal" placeholder="Paste your API Key here">
+                        <span class="icon is-small is-left"><i class="fas fa-key"></i></span>
+                    </div>
+                </div>
+                <div class="content api-key-instructions">
+                    <p><strong>How to get a Gemini API Key:</strong></p>
+                    <ul>
+                        <li>Go to <a href="https://aistudio.google.com/app/apikey" target="_blank" rel="noopener noreferrer">Google AI Studio</a>.</li>
+                        <li>Sign in with your Google account.</li>
+                        <li>Click on "Get API key" or "Create API key in new project".</li>
+                        <li>Copy the generated API key and paste it above.</li>
+                        <li>Make sure the Gemini API is enabled for your project in Google Cloud Console if you created a new project.</li>
+                    </ul>
+                </div>
+                <div id="geminiApiKeyStatusModal" class="message is-small is-hidden-completely">
+                    <div class="message-body"></div>
+                </div>
+            </section>
+            <footer class="modal-card-foot is-justify-content-flex-end">
+                <button class="button is-success" id="saveGeminiApiKeyButtonModal">Save and Test Key</button>
+                <button class="button" id="cancel-api-modal-button">Cancel</button>
+                <button class="button is-danger is-outlined ml-auto" id="clearGeminiApiKeyButtonModal">Clear Stored Key</button>
+            </footer>
+        </div>
+    </div>
+
+    <!-- Footer for Status Messages (optional, can be removed or integrated) -->
+    <footer id="mainStatusFooter" class="is-hidden-completely">Current Status...</footer>
+    <div id="errorLogContainer" class="is-hidden-completely">
+        <p class="has-text-weight-bold">Error Log:</p>
+        <div id="errorLog"></div>
+    </div>
+
+
     <script type="module">
-        // --- PWA Setup (same as before, referencing external sw.js) ---
+        // --- PWA Setup ---
         const PWA_SETUP = {
-            SW_VERSION_REFERENCE: 'v1.0.3', // Matches sw.js version
-            APP_NAME: "LLM Conflict Chat",
-            SHORT_NAME: "LLM Chat",
-            DESCRIPTION: "AI-powered conflict resolution chat, choose your LLM.",
-            THEME_COLOR: "#4CAF50",
-            BACKGROUND_COLOR: "#f4f4f4",
+            SW_VERSION_REFERENCE: 'v1.0.4', // Increment if sw.js or index.html changes
+            APP_NAME: "Difficult Conversations Simulator",
+            SHORT_NAME: "DiffConvSim",
+            DESCRIPTION: "Practice difficult conversations with an AI simulator.",
+            THEME_COLOR: "#363636",
+            BACKGROUND_COLOR: "#1a1a1a", // Dark background
             START_URL: "./index.html",
 
             createSvgDataUrl: function(svgString) {
                 return `data:image/svg+xml;base64,${btoa(unescape(encodeURIComponent(svgString)))}`;
             },
             generateIcons: function() {
-                const commonPath = `M20 2H4c-1.1 0-2 .9-2 2v18l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zm-2 12H6v-2h12v2zm0-3H6V9h12v2zm0-3H6V6h12v2z`;
-                const textElement = (text, yPos = "18.5", fontSize = "3.8px", color = "white") =>
-                    `<text x="50%" y="${yPos}" dominant-baseline="middle" text-anchor="middle" font-family="Arial, sans-serif" font-size="${fontSize}" fill="${color}" font-weight="bold">${text}</text>`;
-                const iconSvgTemplate = (size, bgColor, fgColor, textContent) => `
+                const iconSvgContent = `<path fill="currentColor" d="M20 2H4c-1.1 0-2 .9-2 2v18l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zm-2 12H6v-2h12v2zm0-3H6V9h12v2zm0-3H6V6h12v2z"/>`; // Simple chat bubble
+                const iconSvgTemplate = (size, bgColor = this.THEME_COLOR, fgColor = "white") => `
                     <svg xmlns="http://www.w3.org/2000/svg" width="${size}" height="${size}" viewBox="0 0 24 24">
                         <rect width="24" height="24" fill="${bgColor}"/>
-                        <path fill="${fgColor}" d="${commonPath}"/>
-                        ${textContent ? textElement(textContent) : ''}
+                        <g style="color:${fgColor};">${iconSvgContent}</g>
                     </svg>`.trim();
-                const themedIconSvg = (size, textContent) => iconSvgTemplate(size, this.THEME_COLOR, "white", textContent);
-                this.appleTouchIconUrl = this.createSvgDataUrl(themedIconSvg(180, "Chat"));
-                this.manifestIconUrl192 = this.createSvgDataUrl(themedIconSvg(192, "Chat"));
-                this.manifestIconUrl512 = this.createSvgDataUrl(themedIconSvg(512, "Chat"));
+                this.appleTouchIconUrl = this.createSvgDataUrl(iconSvgTemplate(180));
+                this.manifestIconUrl192 = this.createSvgDataUrl(iconSvgTemplate(192));
+                this.manifestIconUrl512 = this.createSvgDataUrl(iconSvgTemplate(512));
             },
             setupManifest: function() {
                 const manifest = {
@@ -152,7 +360,7 @@
                         { src: this.manifestIconUrl512, sizes: "512x512", type: "image/svg+xml", purpose: "any maskable" }
                     ]
                 };
-                const manifestBlob = new Blob([JSON.stringify(manifest)], {type: 'application/manifest+json'});
+                const manifestBlob = new Blob([JSON.stringify(manifest)], {type: 'application/json'});
                 const manifestUrl = URL.createObjectURL(manifestBlob);
                 const linkManifest = document.createElement('link');
                 linkManifest.rel = 'manifest'; linkManifest.href = manifestUrl;
@@ -165,7 +373,7 @@
             },
             registerServiceWorker: function() {
                 if ('serviceWorker' in navigator) {
-                    navigator.serviceWorker.register('./sw.js') // External SW file
+                    navigator.serviceWorker.register('./sw.js')
                         .then(reg => console.log('Service Worker registered:', reg.scope))
                         .catch(err => console.error('Service Worker registration failed:', err));
                 }
@@ -177,69 +385,61 @@
             }
         };
         PWA_SETUP.init();
-        // --- End PWA Setup ---
-
-        import * as webllm from "https://esm.run/@mlc-ai/web-llm";
 
         // DOM Elements
+        const pages = {
+            splash: document.getElementById('splash-screen'),
+            home: document.getElementById('home-page'),
+            chat: document.getElementById('chat-page'),
+        };
+        const apiKeyModal = document.getElementById('api-key-modal');
+        const apiKeyButtonHome = document.getElementById('api-key-button-home');
+        const saveGeminiApiKeyButtonModal = document.getElementById('saveGeminiApiKeyButtonModal');
+        const clearGeminiApiKeyButtonModal = document.getElementById('clearGeminiApiKeyButtonModal');
+        const geminiApiKeyInputModal = document.getElementById('geminiApiKeyInputModal');
+        const geminiApiKeyStatusModalDiv = document.getElementById('geminiApiKeyStatusModal');
+        const proceedToChatButton = document.getElementById('proceed-to-chat-button');
+
+        const conflictDetailsInput = document.getElementById('conflict-details');
+        const llmCharacterRoleInput = document.getElementById('llm-character-role');
+        const mostDesiredSolInput = document.getElementById('most-desired-sol');
+        const leastDesiredSolInput = document.getElementById('least-desired-sol');
+        const compromisedSolInput = document.getElementById('compromised-sol');
+
         const chatBox = document.getElementById('chat-box');
-        const userInput = document.getElementById('user-input');
-        const sendButton = document.getElementById('send');
-        const mainStatusDiv = document.getElementById('mainStatus');
-        const chatStatsDiv = document.getElementById('chat-stats');
+        const userInputChat = document.getElementById('user-input-chat');
+        const sendButtonChat = document.getElementById('send-button-chat');
+        
         const errorLogDiv = document.getElementById('errorLog');
+        const navHomeButton = document.getElementById('nav-home-button');
+        const navChatButton = document.getElementById('nav-chat-button');
+        const navbarBurger = document.querySelector('.navbar-burger');
+        const navbarMenu = document.getElementById('navbarMenu');
 
-        // LLM Provider UI
-        const providerWebLLMRadio = document.getElementById('providerWebLLM');
-        const providerGeminiRadio = document.getElementById('providerGemini');
-        const webLlmConfigSection = document.getElementById('webLlmConfigSection');
-        const geminiConfigSection = document.getElementById('geminiConfigSection');
-
-        // WebLLM UI
-        const modelSelection = document.getElementById('model-selection');
-        const downloadButton = document.getElementById('download');
-
-        // Gemini UI
-        const geminiApiKeyInput = document.getElementById('geminiApiKeyInput');
-        const saveGeminiApiKeyButton = document.getElementById('saveGeminiApiKeyButton');
-        const testGeminiApiKeyButton = document.getElementById('testGeminiApiKeyButton');
-        const clearGeminiApiKeyButton = document.getElementById('clearGeminiApiKeyButton');
-        const geminiApiKeyStatus = document.getElementById('geminiApiKeyStatus');
 
         // --- State Variables ---
-        let currentLlmProvider = "webllm"; // "webllm" or "gemini"
-        let displayedChatMessages = []; // For UI: [{role: "user" | "assistant", content: "..."}]
-        let isLLMReady = false; // General flag if current LLM is ready for chat
-
-        // WebLLM State
-        let webLlmEngine = null; // Initialized if WebLLM is used
-        let webLlmChatHistory = []; // For WebLLM API: [{role: "system"|"user"|"assistant", content: "..."}]
-        let webLlmSelectedModel = "";
-
-        // Gemini State
-        const GEMINI_API_KEY_STORAGE_KEY = 'geminiApiKey_conflict_chat';
-        const GEMINI_MODEL_NAME = "gemini-1.5-flash-latest"; // Using a model known to support systemInstruction for cleaner prompts
-        const GEMINI_API_BASE_URL = 'https://generativelanguage.googleapis.com/v1beta/models/';
+        let currentPageId = 'splash';
         let geminiApiKey = null;
+        let isGeminiKeyValid = false; // More explicit state for key validity
         let geminiApiHistory = []; // For Gemini API: [{role: "user"|"model", parts: [{text: "..."}]}]
-        let isGeminiKeyValid = false;
+        let currentSystemPrompt = "";
 
-        // Initial System Prompt (common for both)
-        const conflict_details="my 14 yr old daughter is not serious about her studies. she is always on the iphone or ipad or TV. I feel she doesnt care about her future. I have treied motivating her with rewards like phone or TV time, i have tried scolding her, i have tried to talk nicely to her, but nithing seems to work.";
-        const most_desired_sol="she gets more engaged in studies and gets good grades";
-        const least_desired_sol="she gets depressed";
-        const compromised_sol="she gets phone TV time only when she gets good grades";
-        const initialSystemPromptContent = `You are personal or work conflict resolution expert. The user has described the following conflict :${conflict_details}. According to the user the most desired solution is ${most_desired_sol} , least desired solution is ${least_desired_sol} , the user suggest the following as posssible compromised solution ${compromised_sol}. Apply your skills as an expert of conflict resolution strategies to provide the user 2 options ( A & B ) to solve this conflict.After the user picks A or B , role play a converation (as the user's daughter) with the user to train the user to solve the conflict. Start the chat by providing the user options A and B. wait for the user to choose and then for the rest of the chat act as the user's daughter. Don't do the entire converation on you own, wait for the user to respond`;
-        const instructionForInitialOptions = "Please provide the two options (A & B) to solve the conflict as instructed in your system prompt/initial instructions. Then wait for my choice.";
+        // Gemini Config
+        const GEMINI_API_KEY_STORAGE_KEY = 'geminiApiKey_diff_conv_sim';
+        // Use a model that supports systemInstruction if possible for cleaner prompts
+        const GEMINI_MODEL_NAME = "gemini-1.5-flash-latest"; 
+        const GEMINI_API_BASE_URL = 'https://generativelanguage.googleapis.com/v1beta/models/';
 
-
+        // --- Utility Functions ---
         function logError(errorSource, error) {
             console.error(errorSource, error);
+            const errorLogContainer = document.getElementById('errorLogContainer');
+            errorLogContainer.classList.remove('is-hidden-completely');
             const timestamp = new Date().toLocaleTimeString();
             const errorEntry = document.createElement('div');
             errorEntry.classList.add('log-entry');
-            const errorMessage = (error instanceof Error) ? error.message : String(error);
-            errorEntry.textContent = `[${timestamp}] ${errorSource}: ${errorMessage}`;
+            const errorMessageText = (error instanceof Error) ? error.message : String(error);
+            errorEntry.textContent = `[${timestamp}] ${errorSource}: ${errorMessageText}`;
             if (error instanceof Error && error.stack) {
                 const stackTrace = document.createElement('pre');
                 stackTrace.textContent = error.stack;
@@ -249,325 +449,196 @@
             errorLogDiv.scrollTop = errorLogDiv.scrollHeight;
         }
 
-        function logStatus(message) {
-            console.log("Status:", message);
-            mainStatusDiv.textContent = message;
+        function showStatusInModal(message, type = 'info') { // type: 'info', 'success', 'warning', 'danger'
+            geminiApiKeyStatusModalDiv.classList.remove('is-hidden-completely', 'is-info', 'is-success', 'is-warning', 'is-danger');
+            geminiApiKeyStatusModalDiv.classList.add(`is-${type}`);
+            geminiApiKeyStatusModalDiv.querySelector('.message-body').textContent = message;
+        }
+        function hideStatusInModal() {
+            geminiApiKeyStatusModalDiv.classList.add('is-hidden-completely');
         }
 
-        function updateChatUIReadyState(ready) {
-            isLLMReady = ready;
-            userInput.disabled = !ready;
-            sendButton.disabled = !ready;
-            userInput.setAttribute("placeholder", ready ? "Type your message..." : "LLM not ready. Select provider and setup.");
-            if (ready) userInput.focus();
-        }
+        // --- Navigation ---
+        function navigateTo(pageId) {
+            if (pages[currentPageId]) pages[currentPageId].classList.remove('is-active');
+            if (pages[pageId]) {
+                pages[pageId].classList.add('is-active');
+                currentPageId = pageId;
+                document.body.scrollTop = 0; // Scroll to top
+                document.documentElement.scrollTop = 0;
 
-        function clearChat() {
-            chatBox.innerHTML = "";
-            displayedChatMessages = [];
-            webLlmChatHistory = [];
-            geminiApiHistory = [];
-            chatStatsDiv.classList.add("hidden");
-            chatStatsDiv.textContent = "";
-        }
-
-        // --- UI Display Functions ---
-        function displayChatMessageToUI(text, role, isError = false) {
-            const container = document.createElement("div");
-            container.classList.add("message-container");
-            const messageDiv = document.createElement("div");
-            messageDiv.classList.add("message");
-
-            let content = text.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
-            content = content.replace(/\*(.*?)\*/g, '<em>$1</em>');
-            content = content.replace(/\n/g, '<br>');
-            messageDiv.innerHTML = content;
-
-            if (role === "user") {
-                container.classList.add("user");
-            } else { // assistant or model
-                container.classList.add("assistant");
-            }
-            if (isError) {
-                container.classList.add("error");
-            }
-
-            container.appendChild(messageDiv);
-            chatBox.appendChild(container);
-            chatBox.scrollTop = chatBox.scrollHeight;
-            displayedChatMessages.push({ role, content: text }); // Add to display history
-        }
-
-        function updateLastBotMessageInUI(content) {
-            const lastBotMessageContainer = chatBox.querySelector('.message-container.assistant:last-child');
-            if (lastBotMessageContainer) {
-                const messageDiv = lastBotMessageContainer.querySelector('.message');
-                if (messageDiv) {
-                    let formattedContent = content.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
-                    formattedContent = formattedContent.replace(/\*(.*?)\*/g, '<em>$1</em>');
-                    formattedContent = formattedContent.replace(/\n/g, '<br>');
-                    messageDiv.innerHTML = formattedContent;
-                    chatBox.scrollTop = chatBox.scrollHeight;
-                }
+                // Update navbar active state
+                navHomeButton.classList.toggle('is-active', pageId === 'home');
+                navChatButton.classList.toggle('is-active', pageId === 'chat');
+                navChatButton.classList.toggle('is-hidden-completely', pageId !== 'chat' && !geminiApiHistory.length); // Show chat nav only if on chat or history exists
+            } else {
+                console.error("Page not found:", pageId);
             }
         }
-
-        // --- LLM Provider Switching ---
-        function switchLlmProvider(provider) {
-            currentLlmProvider = provider;
-            clearChat();
-            updateChatUIReadyState(false); // LLM becomes not ready until setup for the new provider
-
-            if (provider === "webllm") {
-                webLlmConfigSection.classList.remove("hidden");
-                geminiConfigSection.classList.add("hidden");
-                logStatus("WebLLM selected. Populate models if needed, then Load Model.");
-                if (!webLlmEngine) { // Only populate if not already done
-                    populateWebLLMModels();
-                } else if (webLlmEngine && webLlmEngine.pipeline && webLlmEngine.pipeline.modelId) {
-                     // If WebLLM engine was previously loaded for a model, consider it ready.
-                    logStatus(`WebLLM selected. Model ${webLlmEngine.pipeline.modelId} is loaded. Ready for initial message.`);
-                    // No, don't auto-send initial message. User clicks send or it's done after load.
-                    // For now, user needs to effectively "Load Model" again or we re-trigger sendInitialBotMessage
-                    // Simplest: treat as not ready, make user click Load Model again or handle state better.
-                    // For now, let's assume they might need to click "Load Model" to kick things off or we auto-send.
-                    // Let's stick to: if engine exists and has a model, it's ready.
-                    // No, the initial bot message is key. So if we switch back, it needs to be re-sent.
-                    // This means we need a 'start chat' button or automatically do it.
-                    // For simplicity, let's make the Load Model button the trigger for initial message too.
-                    downloadButton.disabled = false; // Allow reloading current or new model
-                    mainStatusDiv.textContent = `WebLLM selected. Model: ${webLlmSelectedModel || 'None loaded'}. Click 'Load Model' to start.`;
-                    if(webLlmSelectedModel && webLlmEngine && webLlmEngine.pipeline) {
-                        // If a model was loaded, allow sending initial message for it.
-                        // This is tricky. Let's just say: if you switch, WebLLM state is reset until "Load Model"
-                        // updateChatUIReadyState(true);
-                        // sendInitialBotMessage(); // This might be too eager
-                    }
-                }
-            } else if (provider === "gemini") {
-                webLlmConfigSection.classList.add("hidden");
-                geminiConfigSection.classList.remove("hidden");
-                loadGeminiApiKey(); // This will update status and UI readiness
-            }
-        }
-
-        providerWebLLMRadio.addEventListener('change', () => switchLlmProvider("webllm"));
-        providerGeminiRadio.addEventListener('change', () => switchLlmProvider("gemini"));
-
-        // --- WebLLM Specific Functions ---
-        function updateWebLLMEngineInitProgressCallback(report) {
-            mainStatusDiv.textContent = report.text;
-            if (report.progress === 1) {
-                 mainStatusDiv.textContent = `Model ${webLlmSelectedModel} loaded. Waiting for initial advice...`;
-            }
-        }
-
-        async function populateWebLLMModels() {
-            modelSelection.innerHTML = "";
-            let availableCacheMB = 2000; let cacheQuotaMB = 4000;
-            if (navigator.storage && navigator.storage.estimate) {
-                try {
-                    const estimate = await navigator.storage.estimate();
-                    cacheQuotaMB = estimate.quota ? estimate.quota / (1024 * 1024) : 4000;
-                    const usageMB = estimate.usage ? estimate.usage / (1024 * 1024) : 0;
-                    availableCacheMB = cacheQuotaMB - usageMB;
-                    logStatus(`WebLLM Storage: ${usageMB.toFixed(0)}MB used of ${cacheQuotaMB.toFixed(0)}MB. Available: ${availableCacheMB.toFixed(0)}MB.`);
-                } catch (err) { logError("WebLLM StorageEstimate", err); }
-            }
-            const cacheThresholdMB = Math.max(availableCacheMB * 0.8, 500);
-
-            try {
-                if (!webllm.prebuiltAppConfig || !webllm.prebuiltAppConfig.model_list) {
-                    throw new Error("WebLLM prebuiltAppConfig or model_list not available.");
-                }
-                const suitableModels = webllm.prebuiltAppConfig.model_list.filter(modelInfo => {
-                    const estimatedSizeMB = getModelEstimatedSizeMB(modelInfo); // Use your existing helper
-                    return estimatedSizeMB < cacheThresholdMB;
-                }).sort((a,b) => getModelEstimatedSizeMB(a) - getModelEstimatedSizeMB(b));
-
-                if (suitableModels.length > 0) {
-                    suitableModels.forEach(modelInfo => {
-                        const option = document.createElement("option");
-                        option.value = modelInfo.model_id;
-                        const vramDisplay = modelInfo.vram_required_MB ? `${modelInfo.vram_required_MB.toFixed(0)}MB VRAM` : `~${getModelEstimatedSizeMB(modelInfo).toFixed(0)}MB`;
-                        option.textContent = `${modelInfo.model_id} (${vramDisplay})`;
-                        modelSelection.appendChild(option);
-                    });
-                    const preferredDefaults = ["Qwen2.5-0.5B-Instruct-q4f32_1-MLC", "TinyLlama-1.1B-Chat-v1.0-q4f32_1-MLC"];
-                    let defaultModelIdToSet = preferredDefaults.find(p => suitableModels.some(m => m.model_id === p)) || suitableModels[0].model_id;
-                    if (defaultModelIdToSet) modelSelection.value = defaultModelIdToSet;
-                    downloadButton.disabled = false;
-                    logStatus(`WebLLM: Select model (default: ${modelSelection.value}) and click "Load Model".`);
-                } else {
-                    throw new Error(`No WebLLM models small enough (Est. VRAM < ${cacheThresholdMB.toFixed(0)}MB).`);
-                }
-            } catch (err) {
-                logError("WebLLM PopulateModels", err);
-                mainStatusDiv.textContent = "Error fetching or filtering WebLLM model list.";
-                downloadButton.disabled = true;
-            }
-        }
-        function getModelEstimatedSizeMB(modelInfo) { // Copied from your original
-            if (modelInfo && typeof modelInfo.vram_required_MB === 'number' && modelInfo.vram_required_MB > 0) return modelInfo.vram_required_MB;
-            const modelIdLowerCase = modelInfo.model_id.toLowerCase();
-            if (modelIdLowerCase.includes("7b") || modelIdLowerCase.includes("8b")) return 4000;
-            if (modelIdLowerCase.includes("3b") || modelIdLowerCase.includes("4b")) return 2000;
-            if (modelIdLowerCase.includes("qwen2.5-0.5b")) return 350;
-            if (modelIdLowerCase.includes("1b") || modelIdLowerCase.includes("2b")) return 1000;
-            return 1500;
-        }
-
-        async function initializeWebLLMEngine() {
-            if (currentLlmProvider !== "webllm") return;
-            updateChatUIReadyState(false);
-            downloadButton.disabled = true;
-            mainStatusDiv.textContent = "Initializing WebLLM engine...";
-
-            webLlmSelectedModel = modelSelection.value;
-            if (!webLlmSelectedModel) {
-                logError("WebLLM Init", "No model selected.");
-                mainStatusDiv.textContent = "Error: No WebLLM model selected.";
-                downloadButton.disabled = false;
-                return;
-            }
-
-            if (!webLlmEngine) {
-                webLlmEngine = new webllm.MLCEngine();
-                webLlmEngine.setInitProgressCallback(updateWebLLMEngineInitProgressCallback);
-            }
-            
-            webLlmChatHistory = [{ role: "system", content: initialSystemPromptContent }]; // Reset history with system prompt
-
-            const config = { temperature: 0.7, top_p: 0.95 };
-            try {
-                logStatus(`Loading WebLLM model: ${webLlmSelectedModel}...`);
-                await webLlmEngine.reload(webLlmSelectedModel, {}, config);
-                logStatus(`WebLLM model ${webLlmSelectedModel} loaded. Generating initial advice...`);
-                await sendInitialBotMessage(); // This will now check provider
-                // downloadButton will be re-enabled by sendInitialBotMessage completion logic (or its error handling)
-            } catch (err) {
-                logError("WebLLM Engine.reload", err);
-                logStatus(`Error loading WebLLM model ${webLlmSelectedModel}. Check error log.`);
-                downloadButton.disabled = false;
-            }
-        }
-        downloadButton.addEventListener("click", initializeWebLLMEngine);
+        navHomeButton.addEventListener('click', (e) => { e.preventDefault(); navigateTo('home'); });
+        navChatButton.addEventListener('click', (e) => { e.preventDefault(); navigateTo('chat'); });
+        navbarBurger.addEventListener('click', () => {
+            navbarBurger.classList.toggle('is-active');
+            navbarMenu.classList.toggle('is-active');
+        });
 
 
-        // --- Gemini Specific Functions ---
-        function loadGeminiApiKey() {
+        // --- API Key Management ---
+        function loadGeminiApiKeyFromStorage() {
             const storedKey = localStorage.getItem(GEMINI_API_KEY_STORAGE_KEY);
             if (storedKey) {
-                geminiApiKeyInput.value = storedKey;
                 geminiApiKey = storedKey;
-                geminiApiKeyStatus.textContent = 'API Key loaded. Test it or start chatting.';
-                geminiConfigSection.classList.remove("key-needed");
-                // Automatically test if a key is loaded? Or wait for user action.
-                // For now, let's assume it's valid until tested otherwise or if user wants to start.
-                isGeminiKeyValid = true; // Assume valid for now if loaded, test will confirm
-                updateChatUIReadyState(true); // Allow chat if key is present
-                sendInitialBotMessage(); // Attempt to send initial message
+                geminiApiKeyInputModal.value = storedKey; // Pre-fill in modal
+                apiKeyButtonHome.classList.remove('is-danger');
+                apiKeyButtonHome.classList.add('is-success');
+                apiKeyButtonHome.innerHTML = '<span class="icon"><i class="fas fa-key"></i></span><span>API Key Set</span>';
+                isGeminiKeyValid = true; // Assume valid if stored, test will confirm if user tries to save again
+                return true;
             } else {
-                geminiApiKeyStatus.textContent = 'No API Key stored. Please enter one.';
-                geminiConfigSection.classList.add("key-needed");
+                apiKeyButtonHome.classList.add('is-danger');
+                apiKeyButtonHome.classList.remove('is-success');
+                apiKeyButtonHome.innerHTML = '<span class="icon"><i class="fas fa-exclamation-triangle"></i></span><span>Set API Key</span>';
                 isGeminiKeyValid = false;
-                updateChatUIReadyState(false);
+                return false;
             }
         }
 
-        async function testAndSaveGeminiApiKey(isTestOnly = false) {
-            const key = geminiApiKeyInput.value.trim();
+        async function testAndSaveGeminiApiKey() {
+            const key = geminiApiKeyInputModal.value.trim();
             if (!key) {
-                geminiApiKeyStatus.textContent = 'API Key cannot be empty.';
-                logError("Gemini Key", "API Key cannot be empty.");
-                isGeminiKeyValid = false;
-                updateChatUIReadyState(false);
+                showStatusInModal('API Key cannot be empty.', 'warning');
                 return false;
             }
 
-            logStatus("Validating Gemini API Key...");
-            geminiApiKeyStatus.textContent = "Validating Key...";
-            updateChatUIReadyState(false); // Disable chat while testing
+            showStatusInModal('Validating API Key...', 'info');
+            saveGeminiApiKeyButtonModal.classList.add('is-loading');
 
             try {
-                // Use a simple, non-conversational call for validation
                 const testApiUrl = `${GEMINI_API_BASE_URL}${GEMINI_MODEL_NAME}:generateContent?key=${key}`;
                 const response = await fetch(testApiUrl, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ "contents": [{"parts": [{"text": "Hi"}]}] }) // Minimal prompt
+                    body: JSON.stringify({ "contents": [{"parts": [{"text": "Hi"}]}] })
                 });
 
                 if (response.ok) {
-                    geminiApiKeyStatus.textContent = 'API Key is valid!';
-                    if (!isTestOnly) {
-                        localStorage.setItem(GEMINI_API_KEY_STORAGE_KEY, key);
-                        geminiApiKey = key;
-                        geminiApiKeyStatus.textContent += ' Key Saved.';
-                        logStatus("Gemini API Key saved and valid.");
-                    }
+                    localStorage.setItem(GEMINI_API_KEY_STORAGE_KEY, key);
+                    geminiApiKey = key;
                     isGeminiKeyValid = true;
-                    updateChatUIReadyState(true); // Enable chat
-                    sendInitialBotMessage(); // Kick off initial message
+                    showStatusInModal('API Key is valid and saved successfully!', 'success');
+                    loadGeminiApiKeyFromStorage(); // Update home button
+                    setTimeout(() => closeApiKeyModal(), 1500); // Auto-close on success
                     return true;
                 } else {
                     const errorData = await response.json();
-                    const errorMsg = `API Key validation failed: ${errorData.error?.message || response.statusText}`;
-                    geminiApiKeyStatus.textContent = errorMsg;
+                    const errorMsg = `API Key validation failed: ${errorData.error?.message || response.statusText}. Please check your key.`;
+                    showStatusInModal(errorMsg, 'danger');
                     logError("Gemini Key Validation", errorMsg);
                     isGeminiKeyValid = false;
                     return false;
                 }
             } catch (error) {
                 const errorMsg = `Error during API key validation: ${error.message}`;
-                geminiApiKeyStatus.textContent = errorMsg;
+                showStatusInModal(errorMsg, 'danger');
                 logError("Gemini Key Validation Error", error);
                 isGeminiKeyValid = false;
                 return false;
             } finally {
-                 // Re-enable send button if validation passed, or keep disabled if failed
-                updateChatUIReadyState(isGeminiKeyValid);
-                if (!isGeminiKeyValid) logStatus("Gemini API Key validation failed or error occurred.");
+                saveGeminiApiKeyButtonModal.classList.remove('is-loading');
             }
         }
-        saveGeminiApiKeyButton.addEventListener('click', () => testAndSaveGeminiApiKey(false));
-        testGeminiApiKeyButton.addEventListener('click', () => testAndSaveGeminiApiKey(true));
 
-        clearGeminiApiKeyButton.addEventListener('click', () => {
+        function clearGeminiApiKey() {
             localStorage.removeItem(GEMINI_API_KEY_STORAGE_KEY);
             geminiApiKey = null;
-            geminiApiKeyInput.value = '';
-            geminiApiKeyStatus.textContent = 'API Key cleared. Enter a new one to use Gemini.';
-            logStatus("Gemini API Key cleared.");
             isGeminiKeyValid = false;
-            updateChatUIReadyState(false);
-            clearChat();
-        });
+            geminiApiKeyInputModal.value = '';
+            showStatusInModal('Stored API Key cleared.', 'info');
+            loadGeminiApiKeyFromStorage(); // Update home button
+        }
+
+        // Modal Open/Close
+        function openApiKeyModal() { apiKeyModal.classList.add('is-active'); hideStatusInModal(); }
+        function closeApiKeyModal() { apiKeyModal.classList.remove('is-active'); }
+        apiKeyButtonHome.addEventListener('click', openApiKeyModal);
+        saveGeminiApiKeyButtonModal.addEventListener('click', testAndSaveGeminiApiKey);
+        clearGeminiApiKeyButtonModal.addEventListener('click', clearGeminiApiKey);
+        document.getElementById('close-api-modal-button').addEventListener('click', closeApiKeyModal);
+        document.getElementById('cancel-api-modal-button').addEventListener('click', closeApiKeyModal);
+        apiKeyModal.querySelector('.modal-background').addEventListener('click', closeApiKeyModal);
 
 
-        // --- Unified Chat Logic ---
+        // --- Chat Logic ---
+        function constructSystemPrompt(details, role, mostSol, leastSol, compSol) {
+            return `You are acting as '${role}' in a simulated difficult conversation. The user is practicing how to navigate this situation.
+The context of the difficult conversation is:
+${details}
+
+The user's goals are:
+- Most desired outcome: ${mostSol}
+- Least desired outcome: ${leastSol}
+- A potential compromise the user is considering: ${compSol}
+
+Your task is to:
+1. First, offer the user two distinct strategic approaches (Option A and Option B) they could take to initiate or handle this conversation with you (as '${role}'), considering their stated goals and the conflict. Briefly explain each option. Use Markdown for bolding option labels like **Option A:**.
+2. Wait for the user to choose an option or to start the conversation in their own way.
+3. Once the user has chosen an option or started talking, fully embody the character of '${role}'. Respond naturally and realistically based on the persona and the situation described.
+4. Help the user practice by reacting to their statements. Do not lead the entire conversation; wait for the user's input at each step of the role-play.
+Your persona as '${role}' should be consistent throughout the simulation.
+Begin by presenting Option A and Option B.`;
+        }
+
+        function addMessageToChatUI(text, role, isError = false) {
+            const container = document.createElement("div");
+            container.classList.add("message-container", role);
+            if (isError) container.classList.add("error");
+
+            const bubble = document.createElement("div");
+            bubble.classList.add("message-bubble");
+            
+            // Basic Markdown for bold and newlines
+            let content = text.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
+            content = content.replace(/\n/g, '<br>');
+            bubble.innerHTML = content;
+
+            container.appendChild(bubble);
+            chatBox.appendChild(container);
+            chatBox.scrollTop = chatBox.scrollHeight;
+        }
+        
+        function updateLastBotMessageInUI(content) {
+            const lastBotMessageContainer = chatBox.querySelector('.message-container.assistant:last-child .message-bubble');
+            if (lastBotMessageContainer) {
+                let formattedContent = content.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
+                formattedContent = formattedContent.replace(/\n/g, '<br>');
+                lastBotMessageContainer.innerHTML = formattedContent;
+                chatBox.scrollTop = chatBox.scrollHeight;
+            }
+        }
+
         async function sendInitialBotMessage() {
-            if (!isLLMReady && currentLlmProvider === "webllm") { // For WebLLM, Load Model button triggers this.
-                 // If WebLLM and not ready, means model isn't loaded. initializeWebLLMEngine handles it.
-                return;
-            }
-             if (currentLlmProvider === "gemini" && !isGeminiKeyValid) {
-                logStatus("Gemini API key not valid or not set. Cannot send initial message.");
+            if (!isGeminiKeyValid) {
+                addMessageToChatUI("API Key is not set or invalid. Please set it up on the home page.", "assistant", true);
+                logError("Chat Init", "Gemini API key not valid.");
+                sendButtonChat.disabled = true;
+                userInputChat.disabled = true;
                 return;
             }
 
-            logStatus("LLM is generating initial advice...");
-            updateChatUIReadyState(false); // Disable input during generation
-            userInput.setAttribute("placeholder", "Generating initial advice...");
-            clearChat(); // Clear previous messages before initial one
+            sendButtonChat.disabled = true;
+            sendButtonChat.classList.add('is-loading');
+            userInputChat.disabled = true;
+            userInputChat.placeholder = "AI is preparing initial options...";
+            chatBox.innerHTML = ''; // Clear chat for new session
+            geminiApiHistory = []; // Reset history for new session
 
-            displayChatMessageToUI("▍", "assistant"); // Typing indicator
+            addMessageToChatUI("▍", "assistant"); // Typing indicator
 
             let accumulatedMessage = "";
             let animationFrameId;
             let cursorVisible = true;
-            const typingIndicator = () => {
-                if (isLLMReady) { // Check general readiness flag
+            const typingIndicator = () => { // This is a simple UI typing indicator, not tied to actual streaming
+                if (!sendButtonChat.classList.contains('is-loading')) { // Check if generation is finished
                     updateLastBotMessageInUI(accumulatedMessage);
                     if (animationFrameId) cancelAnimationFrame(animationFrameId);
                     return;
@@ -579,101 +650,70 @@
             animationFrameId = requestAnimationFrame(typingIndicator);
 
             try {
-                let finalMessageContent = "";
-                if (currentLlmProvider === "webllm") {
-                    // WebLLM history already has system prompt from initializeWebLLMEngine
-                    const messagesForAPICall = [
-                        ...webLlmChatHistory, // Should contain only system prompt at this stage
-                        { role: "user", content: instructionForInitialOptions }
-                    ];
-                    webLlmChatHistory.push({ role: "user", content: instructionForInitialOptions }); // Add to API history
+                // The system prompt is now passed directly in the request for Gemini
+                const requestBody = {
+                    contents: [{ role: "user", parts: [{ text: "Let's begin the simulation. Please provide the initial options as per your instructions." }] }],
+                    systemInstruction: { parts: [{ text: currentSystemPrompt }] },
+                    generationConfig: { temperature: 0.7, topP: 0.95, maxOutputTokens: 2048 }
+                };
+                // We don't add "Let's begin..." to geminiApiHistory as it's an instruction to the *system*, not part of the role-play.
+                // The role-play history starts *after* the initial options.
 
-                    const stream = await webLlmEngine.chat.completions.create({
-                        stream: true, messages: messagesForAPICall,
-                    });
-                    for await (const chunk of stream) {
-                        const curDelta = chunk.choices[0]?.delta?.content || "";
-                        if (curDelta) accumulatedMessage += curDelta;
-                    }
-                    finalMessageContent = accumulatedMessage;
-                    webLlmChatHistory.push({ role: "assistant", content: finalMessageContent });
-                    const statsText = await webLlmEngine.runtimeStatsText();
-                    chatStatsDiv.textContent = statsText;
-                    chatStatsDiv.classList.remove("hidden");
+                const response = await fetch(`${GEMINI_API_BASE_URL}${GEMINI_MODEL_NAME}:generateContent?key=${geminiApiKey}`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(requestBody)
+                });
 
-                } else if (currentLlmProvider === "gemini") {
-                    geminiApiHistory = []; // Clear previous Gemini history for a fresh start
-                    // For Gemini, send system prompt + initial instruction
-                    // Note: Using systemInstruction which is cleaner if model supports it
-                    const requestBody = {
-                        contents: [{ role: "user", parts: [{ text: instructionForInitialOptions }] }],
-                        systemInstruction: { parts: [{ text: initialSystemPromptContent }] },
-                        generationConfig: { temperature: 0.7, topP: 0.95, maxOutputTokens: 2048 }
-                    };
-                    geminiApiHistory.push({ role: "user", parts: [{ text: instructionForInitialOptions }] }); // Add to API history
+                sendButtonChat.classList.remove('is-loading'); // Stop loading indicator after fetch
+                if (animationFrameId) cancelAnimationFrame(animationFrameId); // Stop typing animation
 
-                    const response = await fetch(`${GEMINI_API_BASE_URL}${GEMINI_MODEL_NAME}:generateContent?key=${geminiApiKey}`, {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify(requestBody)
-                    });
-                    if (!response.ok) {
-                        const errorData = await response.json();
-                        throw new Error(`Gemini API Error: ${errorData.error?.message || response.statusText}`);
-                    }
-                    const data = await response.json();
-                    if (data.candidates && data.candidates[0]?.content?.parts[0]?.text) {
-                        finalMessageContent = data.candidates[0].content.parts[0].text;
-                        geminiApiHistory.push({ role: "model", parts: [{ text: finalMessageContent }] });
-                    } else {
-                        throw new Error("Invalid response structure from Gemini.");
-                    }
+                if (!response.ok) {
+                    const errorData = await response.json();
+                    throw new Error(`Gemini API Error (Initial): ${errorData.error?.message || response.statusText}`);
                 }
-
-                if (animationFrameId) cancelAnimationFrame(animationFrameId);
-                updateLastBotMessageInUI(finalMessageContent); // Final clean update
-                // The message is already in displayedChatMessages via updateLastBotMessageInUI indirectly through typing indicator's final call or direct update
-                // Ensure it is added to display history if not already handled perfectly by typing indicator.
-                // It's safer to ensure the displayedChatMessages array is up-to-date here if needed
-                if (displayedChatMessages.length > 0 && displayedChatMessages[displayedChatMessages.length -1].role === 'assistant') {
-                    displayedChatMessages[displayedChatMessages.length -1].content = finalMessageContent;
+                const data = await response.json();
+                if (data.candidates && data.candidates[0]?.content?.parts[0]?.text) {
+                    accumulatedMessage = data.candidates[0].content.parts[0].text;
+                    updateLastBotMessageInUI(accumulatedMessage);
+                    geminiApiHistory.push({ role: "model", parts: [{ text: accumulatedMessage }] });
+                    userInputChat.disabled = false;
+                    sendButtonChat.disabled = false;
+                    userInputChat.placeholder = "Type your response...";
+                    userInputChat.focus();
                 } else {
-                     // This case should ideally not happen if typing indicator worked before this point.
-                    // This would mean initial "▍" was never replaced by a real message.
-                    // displayChatMessageToUI(finalMessageContent, "assistant");
+                    throw new Error("Invalid response structure from Gemini (Initial).");
                 }
-
-
-                updateChatUIReadyState(true);
-                logStatus(`Initial advice received. You can now chat.`);
-
             } catch (err) {
                 if (animationFrameId) cancelAnimationFrame(animationFrameId);
-                logError(`${currentLlmProvider} InitialBotMsg`, err);
+                sendButtonChat.classList.remove('is-loading');
+                logError("Gemini InitialBotMsg", err);
                 updateLastBotMessageInUI(`Error getting initial advice: ${err.message}`);
-                displayChatMessageToUI(`Error getting initial advice: ${err.message}`, "assistant", true);
-                updateChatUIReadyState(false); // Keep UI disabled on error here. User might need to reconfigure.
-                if (currentLlmProvider === "webllm") downloadButton.disabled = false; // Allow retry for WebLLM
+                addMessageToChatUI(`Error: ${err.message}`, "assistant", true); // Add distinct error message
+                userInputChat.disabled = true;
+                sendButtonChat.disabled = true;
             }
         }
 
+        async function handleSendMessageToGemini() {
+            const inputText = userInputChat.value.trim();
+            if (inputText.length === 0 || !isGeminiKeyValid || sendButtonChat.classList.contains('is-loading')) return;
 
-        async function handleSendMessage() {
-            const inputText = userInput.value.trim();
-            if (inputText.length === 0 || !isLLMReady) return;
+            addMessageToChatUI(inputText, "user");
+            geminiApiHistory.push({ role: "user", parts: [{ text: inputText }] });
+            userInputChat.value = "";
+            sendButtonChat.disabled = true;
+            sendButtonChat.classList.add('is-loading');
+            userInputChat.disabled = true;
+            userInputChat.placeholder = "AI is thinking...";
 
-            updateChatUIReadyState(false);
-            userInput.setAttribute("placeholder", "Generating response...");
-            displayChatMessageToUI(inputText, "user"); // Add user message to UI and display history
-            userInput.value = "";
-
-            displayChatMessageToUI("▍", "assistant"); // Typing indicator
+            addMessageToChatUI("▍", "assistant"); // Typing indicator
 
             let accumulatedMessage = "";
             let animationFrameId;
             let cursorVisible = true;
             const typingIndicator = () => {
-                if (isLLMReady) {
+                if (!sendButtonChat.classList.contains('is-loading')) {
                     updateLastBotMessageInUI(accumulatedMessage);
                     if (animationFrameId) cancelAnimationFrame(animationFrameId);
                     return;
@@ -685,87 +725,98 @@
             animationFrameId = requestAnimationFrame(typingIndicator);
 
             try {
-                let finalMessageContent = "";
-                if (currentLlmProvider === "webllm") {
-                    webLlmChatHistory.push({ role: "user", content: inputText });
-                    const stream = await webLlmEngine.chat.completions.create({
-                        stream: true, messages: webLlmChatHistory,
-                    });
-                    for await (const chunk of stream) {
-                        const curDelta = chunk.choices[0]?.delta?.content || "";
-                        if (curDelta) accumulatedMessage += curDelta;
-                    }
-                    finalMessageContent = accumulatedMessage;
-                    webLlmChatHistory.push({ role: "assistant", content: finalMessageContent });
-                    const statsText = await webLlmEngine.runtimeStatsText();
-                    chatStatsDiv.textContent = statsText;
-                    chatStatsDiv.classList.remove("hidden");
+                const requestBody = {
+                    contents: geminiApiHistory, // Send full conversational history
+                    systemInstruction: { parts: [{ text: currentSystemPrompt }] }, // Re-iterate system context
+                    generationConfig: { temperature: 0.7, topP: 0.95, maxOutputTokens: 2048 }
+                };
 
-                } else if (currentLlmProvider === "gemini") {
-                    geminiApiHistory.push({ role: "user", parts: [{ text: inputText }] });
-                    const requestBody = {
-                        contents: geminiApiHistory,
-                        systemInstruction: { parts: [{ text: initialSystemPromptContent }] }, // Always include system context
-                        generationConfig: { temperature: 0.7, topP: 0.95, maxOutputTokens: 2048 }
-                    };
-                    const response = await fetch(`${GEMINI_API_BASE_URL}${GEMINI_MODEL_NAME}:generateContent?key=${geminiApiKey}`, {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify(requestBody)
-                    });
-                    if (!response.ok) {
-                        const errorData = await response.json();
-                        throw new Error(`Gemini API Error: ${errorData.error?.message || response.statusText}`);
-                    }
-                    const data = await response.json();
-                     if (data.candidates && data.candidates[0]?.content?.parts[0]?.text) {
-                        finalMessageContent = data.candidates[0].content.parts[0].text;
-                        geminiApiHistory.push({ role: "model", parts: [{ text: finalMessageContent }] });
-                    } else if (data.promptFeedback && data.promptFeedback.blockReason) {
-                        finalMessageContent = `Blocked by API: ${data.promptFeedback.blockReason}. Safety Ratings: ${data.promptFeedback.safetyRatings.map(r => `${r.category}_${r.probability}`).join(', ')}`;
-                        // Don't add to history as a valid model response if blocked this way
-                        logError("Gemini Response Blocked", finalMessageContent);
-                    }
-                     else {
-                        throw new Error("Invalid response structure from Gemini.");
-                    }
-                }
-
+                const response = await fetch(`${GEMINI_API_BASE_URL}${GEMINI_MODEL_NAME}:generateContent?key=${geminiApiKey}`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(requestBody)
+                });
+                
+                sendButtonChat.classList.remove('is-loading');
                 if (animationFrameId) cancelAnimationFrame(animationFrameId);
-                updateLastBotMessageInUI(finalMessageContent);
-                // Update the actual content in displayedChatMessages for the last assistant message
-                if (displayedChatMessages.length > 0 && displayedChatMessages[displayedChatMessages.length -1].role === 'assistant') {
-                    displayedChatMessages[displayedChatMessages.length -1].content = finalMessageContent;
+
+                if (!response.ok) {
+                    const errorData = await response.json();
+                    throw new Error(`Gemini API Error: ${errorData.error?.message || response.statusText}`);
                 }
-
-                updateChatUIReadyState(true);
-
+                const data = await response.json();
+                if (data.candidates && data.candidates[0]?.content?.parts[0]?.text) {
+                    accumulatedMessage = data.candidates[0].content.parts[0].text;
+                    updateLastBotMessageInUI(accumulatedMessage);
+                    geminiApiHistory.push({ role: "model", parts: [{ text: accumulatedMessage }] });
+                } else if (data.promptFeedback && data.promptFeedback.blockReason) {
+                    accumulatedMessage = `Blocked by API: ${data.promptFeedback.blockReason}.`;
+                    logError("Gemini Response Blocked", accumulatedMessage);
+                    updateLastBotMessageInUI(accumulatedMessage);
+                    // Don't add to history as a valid model response if blocked
+                } else {
+                    throw new Error("Invalid response structure from Gemini.");
+                }
             } catch (err) {
                 if (animationFrameId) cancelAnimationFrame(animationFrameId);
-                logError(`${currentLlmProvider} SendMessage`, err);
+                sendButtonChat.classList.remove('is-loading');
+                logError("Gemini SendMessage", err);
                 updateLastBotMessageInUI(`Error generating response: ${err.message}`);
-                 // Update the actual content in displayedChatMessages for the last assistant message
-                if (displayedChatMessages.length > 0 && displayedChatMessages[displayedChatMessages.length -1].role === 'assistant') {
-                    displayedChatMessages[displayedChatMessages.length -1].content = `Error: ${err.message}`;
-                    const lastMsgContainer = chatBox.querySelector('.message-container.assistant:last-child');
-                    if (lastMsgContainer) lastMsgContainer.classList.add('error');
-                }
-                updateChatUIReadyState(true); // Re-enable for user to try again or fix
+                addMessageToChatUI(`Error: ${err.message}`, "assistant", true);
+            } finally {
+                userInputChat.disabled = false;
+                sendButtonChat.disabled = false;
+                userInputChat.placeholder = "Type your response...";
+                userInputChat.focus();
             }
         }
-
-        sendButton.addEventListener("click", handleSendMessage);
-        userInput.addEventListener("keypress", (event) => {
-            if (event.key === "Enter" && !event.shiftKey && !sendButton.disabled) {
+        sendButtonChat.addEventListener("click", handleSendMessageToGemini);
+        userInputChat.addEventListener("keypress", (event) => {
+            if (event.key === "Enter" && !sendButtonChat.disabled && !sendButtonChat.classList.contains('is-loading')) {
                 event.preventDefault();
-                handleSendMessage();
+                handleSendMessageToGemini();
             }
         });
 
-        // Initial setup
-        (async () => {
-            switchLlmProvider("webllm"); // Default to WebLLM
-        })();
+
+        // --- Home Page Logic ---
+        proceedToChatButton.addEventListener('click', () => {
+            const conflictDetails = conflictDetailsInput.value.trim();
+            const llmCharacterRole = llmCharacterRoleInput.value.trim();
+            const mostDesiredSol = mostDesiredSolInput.value.trim();
+            const leastDesiredSol = leastDesiredSolInput.value.trim();
+            const compromisedSol = compromisedSolInput.value.trim();
+
+            if (!conflictDetails || !llmCharacterRole || !mostDesiredSol || !leastDesiredSol) {
+                alert("Please fill in all required fields: Description, AI Role, Most and Least Desired Outcomes.");
+                return;
+            }
+            if (!isGeminiKeyValid) {
+                 openApiKeyModal();
+                 showStatusInModal("Please set and validate your Gemini API Key before proceeding.", "warning");
+                return;
+            }
+
+            currentSystemPrompt = constructSystemPrompt(
+                conflictDetails, llmCharacterRole, mostDesiredSol, leastDesiredSol, compromisedSol
+            );
+            navigateTo('chat');
+            sendInitialBotMessage();
+        });
+
+
+        // --- Initial Application Load ---
+        functioninitializeApp() {
+            PWA_SETUP.init(); // Initialize PWA features
+
+            setTimeout(() => {
+                if (pages.splash) pages.splash.classList.remove('is-active');
+                navigateTo('home');
+                loadGeminiApiKeyFromStorage(); // Check API key status for home button
+            }, 2000); // Splash screen duration
+        }
+
+        document.addEventListener('DOMContentLoaded', initializeApp);
 
     </script>
 </body>
