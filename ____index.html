@@ -89,7 +89,7 @@
         #app-navbar .navbar-brand > .navbar-item.app-brand-link {
             display: none !important;
         }
-        #navApiKeyStatusLink, #navTtsToggle { 
+        #navApiKeyStatusLink, #navTtsToggle { /* Style for navbar items */
             font-size: 0.9em;
         }
         #navApiKeyStatusLink.key-not-set {
@@ -255,6 +255,7 @@
         </div>
     </nav>
 
+    <!-- Home Page -->
     <div id="home-page" class="page">
         <section class="section">
             <div class="container">
@@ -301,6 +302,7 @@
         </section>
     </div>
 
+    <!-- Chat Page -->
     <div id="chat-page" class="page">
         <div id="chat-page-content">
             <div id="chat-box"></div>
@@ -318,6 +320,7 @@
         </div>
     </div>
 
+    <!-- About Page -->
     <div id="about-page" class="page">
         <section class="section">
             <div class="container">
@@ -344,6 +347,7 @@
         </section>
     </div>
 
+    <!-- API Key Modal -->
     <div id="api-key-modal" class="modal">
         <div class="modal-background"></div>
         <div class="modal-card">
@@ -390,7 +394,7 @@
 
     <script type="module">
         const PWA_SETUP = {
-            SW_VERSION_REFERENCE: 'v1.0.10',
+            SW_VERSION_REFERENCE: 'v1.0.10', // Increment if sw.js or index.html changes
             APP_NAME: "Difficult Conversations Simulator",
             SHORT_NAME: "DiffConvSim",
             DESCRIPTION: "Practice difficult conversations with an AI simulator.",
@@ -477,7 +481,7 @@
         const navChatButton = document.getElementById('nav-chat-button');
         const navAboutButton = document.getElementById('nav-about-button');
         const navApiKeyStatusLink = document.getElementById('navApiKeyStatusLink');
-        const navTtsToggle = document.getElementById('navTtsToggle');
+        const navTtsToggle = document.getElementById('navTtsToggle'); // TTS Toggle button
         const navbarBurger = document.querySelector('.navbar-burger');
         const navbarMenu = document.getElementById('navbarMenu');
         const appBrandLink = document.querySelector('.app-brand-link');
@@ -489,15 +493,15 @@
         let isGeminiKeyValid = false;
         let geminiApiHistory = [];
         let currentSystemPrompt = "";
-        let isTtsEnabled = false;
-        const TTS_ENABLED_STORAGE_KEY = 'diffConvSimTtsEnabled_v1'; // Added version to key for new logic
+        let isTtsEnabled = false; // TTS state, default off
+        const TTS_ENABLED_STORAGE_KEY = 'diffConvSimTtsEnabled';
 
         const GEMINI_API_KEY_STORAGE_KEY = 'geminiApiKey_diff_conv_sim_v2';
         const GEMINI_MODEL_NAME_FALLBACK = "gemini-1.5-flash-latest";
         let currentGeminiModelName = GEMINI_MODEL_NAME_FALLBACK;
         const GEMINI_API_BASE_URL = 'https://generativelanguage.googleapis.com/v1beta/';
 
-        function logError(errorSource, error) { 
+        function logError(errorSource, error) { /* ... same ... */ 
             console.error(errorSource, error);
             const errorLogContainer = document.getElementById('errorLogContainer');
             if(errorLogContainer) errorLogContainer.classList.remove('is-hidden-completely');
@@ -516,23 +520,23 @@
                  errorLogDiv.scrollTop = errorLogDiv.scrollHeight;
             }
         }
-        function showStatusInModal(message, type = 'info') { 
+        function showStatusInModal(message, type = 'info') { /* ... same ... */ 
             geminiApiKeyStatusModalDiv.classList.remove('is-hidden-completely', 'is-info', 'is-success', 'is-warning', 'is-danger');
             geminiApiKeyStatusModalDiv.classList.add(`is-${type}`);
             geminiApiKeyStatusModalDiv.querySelector('.message-body').textContent = message;
         }
-        function hideStatusInModal() { 
+        function hideStatusInModal() { /* ... same ... */ 
             geminiApiKeyStatusModalDiv.classList.add('is-hidden-completely');
         }
 
-        function updateCurrentModelDisplay(modelName) { 
+        function updateCurrentModelDisplay(modelName) { /* ... same ... */ 
             const displayText = `Using Model: ${modelName || 'N/A'}`;
             if (currentModelDisplayHome) currentModelDisplayHome.textContent = displayText;
             if (currentModelDisplayModal) currentModelDisplayModal.textContent = displayText;
             console.log("UI Updated - Current Model:", modelName);
         }
         
-        async function fetchAndSelectPreviewModel(apiKey) {
+        async function fetchAndSelectPreviewModel(apiKey) { /* ... same as previous version ... */ 
             showStatusInModal('Fetching available models...', 'info');
             currentGeminiModelName = GEMINI_MODEL_NAME_FALLBACK; 
             updateCurrentModelDisplay(currentGeminiModelName); 
@@ -617,7 +621,7 @@
             updateCurrentModelDisplay(currentGeminiModelName);
         }
         
-        function navigateTo(pageId) { 
+        function navigateTo(pageId) { /* ... same ... */ 
             console.log(`Navigating to: ${pageId}`);
             if (pages[currentPageId]) {
                 pages[currentPageId].classList.remove('is-active');
@@ -644,14 +648,14 @@
         navChatButton.addEventListener('click', (e) => { e.preventDefault(); navigateTo('chat'); });
         navAboutButton.addEventListener('click', (e) => { e.preventDefault(); navigateTo('about'); });
         
-        if (navbarBurger) { 
+        if (navbarBurger) { /* ... same ... */ 
             navbarBurger.addEventListener('click', () => {
                 navbarBurger.classList.toggle('is-active');
                 navbarMenu.classList.toggle('is-active');
             });
         }
 
-        if (navApiKeyStatusLink) { 
+        if (navApiKeyStatusLink) { /* ... same ... */ 
             navApiKeyStatusLink.addEventListener('click', (e) => {
                 e.preventDefault();
                 openApiKeyModal();
@@ -660,56 +664,37 @@
 
         // --- TTS Functionality ---
         function speakText(text) {
-            if (!isTtsEnabled) {
-                // console.log("TTS is disabled, not speaking.");
-                return;
-            }
+            if (!isTtsEnabled) return;
 
             if ('speechSynthesis' in window) {
                 try {
-                    if (window.speechSynthesis.speaking) {
-                        console.log("TTS: Canceling previous speech.");
-                        window.speechSynthesis.cancel();
-                    }
-                    
+                    window.speechSynthesis.cancel(); // Cancel any ongoing speech
                     const utterance = new SpeechSynthesisUtterance(text);
                     // utterance.lang = 'en-US'; // Optional: specify language
-                    // utterance.voice = ...; // Optional: specify voice
-                    
-                    utterance.onstart = () => console.log("TTS: Speech started for - ", text.substring(0,30) + "...");
-                    utterance.onend = () => console.log("TTS: Speech ended for - ", text.substring(0,30) + "...");
-                    utterance.onerror = (event) => {
-                        console.error("TTS: SpeechSynthesisUtterance.onerror - ", event);
-                        logError("TTS Utterance Error", `Error: ${event.error}, Utterance: ${text.substring(0,30)}`);
-                    };
-                    
-                    // A small delay can sometimes help on iOS, especially after a cancel.
-                    setTimeout(() => {
-                        console.log("TTS: Attempting to speak - ", text.substring(0,30) + "...");
-                        window.speechSynthesis.speak(utterance);
-                    }, 50);
-
+                    // You can also select a voice if needed:
+                    // const voices = window.speechSynthesis.getVoices();
+                    // utterance.voice = voices.find(voice => voice.lang === 'en-US' && voice.name === 'Google US English'); // Example
+                    window.speechSynthesis.speak(utterance);
                 } catch (e) {
-                    console.error("TTS: Error in speakText function - ", e);
-                    logError("TTS General Error", e);
+                    logError("TTS Error", e);
                 }
             } else {
-                logError("TTS Support", "Speech Synthesis API not supported in this browser.");
+                logError("TTS Error", "Speech Synthesis API not supported.");
             }
         }
 
         function updateTtsToggleVisual() {
             const icon = navTtsToggle.querySelector('.icon i');
-            const textSpan = navTtsToggle.querySelector('span:last-child'); // Target the text span
+            const text = navTtsToggle.querySelector('span:last-child');
             if (isTtsEnabled) {
                 icon.classList.remove('fa-volume-mute');
                 icon.classList.add('fa-volume-up');
-                textSpan.textContent = "Mute AI"; // Change text content
-                navTtsToggle.classList.add('is-success');
+                text.textContent = "Mute AI";
+                navTtsToggle.classList.add('is-success'); // Optional: visual feedback
             } else {
                 icon.classList.remove('fa-volume-up');
                 icon.classList.add('fa-volume-mute');
-                textSpan.textContent = "Speak AI"; // Change text content
+                text.textContent = "Speak AI";
                 navTtsToggle.classList.remove('is-success');
             }
         }
@@ -718,43 +703,25 @@
             navTtsToggle.addEventListener('click', (e) => {
                 e.preventDefault();
                 isTtsEnabled = !isTtsEnabled;
-                localStorage.setItem(TTS_ENABLED_STORAGE_KEY, isTtsEnabled.toString());
+                localStorage.setItem(TTS_ENABLED_STORAGE_KEY, isTtsEnabled);
                 updateTtsToggleVisual();
-
-                if (isTtsEnabled) {
-                    // Prime the Speech API when user enables it
-                    if ('speechSynthesis' in window) {
-                        console.log("TTS: Priming Speech API on enable.");
-                         // Stop any currently speaking utterances before priming.
-                        if (window.speechSynthesis.speaking) {
-                            window.speechSynthesis.cancel();
-                        }
-                        const primeUtterance = new SpeechSynthesisUtterance(" "); // A single space can work
-                        primeUtterance.volume = 0.01; // Make it nearly silent
-                        primeUtterance.onstart = () => console.log("TTS: Prime utterance started.");
-                        primeUtterance.onend = () => console.log("TTS: Prime utterance ended.");
-                        primeUtterance.onerror = (event) => console.error("TTS: Prime utterance error:", event.error);
-                        window.speechSynthesis.speak(primeUtterance);
-                    }
-                } else {
-                    // If TTS is disabled, cancel any ongoing speech.
-                    if ('speechSynthesis' in window && window.speechSynthesis.speaking) {
-                        window.speechSynthesis.cancel();
-                        console.log("TTS: Disabled, speech cancelled.");
-                    }
+                if (!isTtsEnabled) {
+                    window.speechSynthesis.cancel(); // Stop speech if disabled
                 }
             });
         }
 
         function loadTtsPreference() {
             const storedTtsPref = localStorage.getItem(TTS_ENABLED_STORAGE_KEY);
-            // Default to false if no preference is stored or if stored value is not 'true'
-            isTtsEnabled = storedTtsPref === 'true'; 
+            if (storedTtsPref !== null) {
+                isTtsEnabled = storedTtsPref === 'true';
+            }
             updateTtsToggleVisual();
         }
         // --- End TTS Functionality ---
 
-        function loadGeminiApiKeyFromStorage() { 
+
+        function loadGeminiApiKeyFromStorage() { /* ... same, calls fetchAndSelectPreviewModel if key exists ... */ 
             const storedKey = localStorage.getItem(GEMINI_API_KEY_STORAGE_KEY);
             navApiKeyStatusLink.classList.remove('key-set', 'key-not-set');
             if (storedKey) {
@@ -780,7 +747,7 @@
                 return false;
             }
         }
-        async function testAndSaveGeminiApiKey() { 
+        async function testAndSaveGeminiApiKey() { /* ... same, calls fetchAndSelectPreviewModel on success ... */ 
             const key = geminiApiKeyInputModal.value.trim();
             if (!key) {
                 showStatusInModal('API Key cannot be empty.', 'warning');
@@ -832,7 +799,7 @@
                 saveGeminiApiKeyButtonModal.classList.remove('is-loading');
             }
         }
-        function clearGeminiApiKey() { 
+        function clearGeminiApiKey() { /* ... same ... */ 
             localStorage.removeItem(GEMINI_API_KEY_STORAGE_KEY);
             geminiApiKey = null;
             isGeminiKeyValid = false; 
@@ -840,12 +807,12 @@
             showStatusInModal('Stored API Key cleared.', 'info');
             loadGeminiApiKeyFromStorage();
         }
-        function openApiKeyModal() { 
+        function openApiKeyModal() { /* ... same ... */ 
              apiKeyModal.classList.add('is-active'); 
              hideStatusInModal(); 
              updateCurrentModelDisplay(currentGeminiModelName);
         }
-        function closeApiKeyModal() { 
+        function closeApiKeyModal() { /* ... same ... */ 
             apiKeyModal.classList.remove('is-active'); 
         }
         apiKeyButtonHome.addEventListener('click', openApiKeyModal);
@@ -897,7 +864,7 @@ Begin by presenting Option A and Option B.`;
                 addMessageToChatUI(content, "assistant"); 
             }
         }
-        async function sendInitialBotMessage() { 
+        async function sendInitialBotMessage() { /* ... calls speakText ... */ 
              if (!isGeminiKeyValid) {
                 addMessageToChatUI("API Key is not set or invalid. Please set it up on the home page or via the navbar menu.", "assistant", true);
                 logError("Chat Init", "Gemini API key not valid.");
@@ -950,7 +917,7 @@ Begin by presenting Option A and Option B.`;
                     accumulatedMessage = data.candidates[0].content.parts[0].text;
                     updateLastBotMessageInUI(accumulatedMessage);
                     geminiApiHistory.push({ role: "model", parts: [{ text: accumulatedMessage }] });
-                    speakText(accumulatedMessage); 
+                    speakText(accumulatedMessage); // Speak the initial message
                     userInputChat.disabled = false;
                     sendButtonChat.disabled = false;
                     userInputChat.placeholder = "Type your response...";
@@ -968,7 +935,7 @@ Begin by presenting Option A and Option B.`;
                 userInputChat.placeholder = "Error during initialization.";
             }
         }
-        async function handleSendMessageToGemini() { 
+        async function handleSendMessageToGemini() { /* ... calls speakText ... */ 
             const inputText = userInputChat.value.trim();
             if (inputText.length === 0 || !isGeminiKeyValid || sendButtonChat.classList.contains('is-loading')) return;
             addMessageToChatUI(inputText, "user");
@@ -1016,7 +983,7 @@ Begin by presenting Option A and Option B.`;
                     accumulatedMessage = data.candidates[0].content.parts[0].text;
                     updateLastBotMessageInUI(accumulatedMessage);
                     geminiApiHistory.push({ role: "model", parts: [{ text: accumulatedMessage }] });
-                    speakText(accumulatedMessage); 
+                    speakText(accumulatedMessage); // Speak the AI's response
                 } else if (data.promptFeedback && data.promptFeedback.blockReason) {
                     accumulatedMessage = `Blocked by API: ${data.promptFeedback.blockReason}.`;
                     logError("Gemini Response Blocked", accumulatedMessage);
@@ -1044,7 +1011,7 @@ Begin by presenting Option A and Option B.`;
             }
         });
 
-        proceedToChatButton.addEventListener('click', () => { 
+        proceedToChatButton.addEventListener('click', () => { /* ... same ... */ 
             const conflictDetails = conflictDetailsInput.value.trim();
             const llmCharacterRole = llmCharacterRoleInput.value.trim();
             const mostDesiredSol = mostDesiredSolInput.value.trim();
@@ -1068,7 +1035,7 @@ Begin by presenting Option A and Option B.`;
 
         function initializeApp() { 
             PWA_SETUP.init(); 
-            loadTtsPreference(); 
+            loadTtsPreference(); // Load TTS preference on app start
             pages.splash.classList.add('is-active');
             Object.values(pages).forEach(page => {
                 if (page.id !== 'splash-screen') page.classList.remove('is-active');
