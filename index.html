@@ -1,25 +1,9 @@
-<!DOCTYPE html>
-<html lang="en" data-theme="dark">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-    <title>Difficult Conversations Simulator</title>
-
-    <meta name="description" content="Practice difficult conversations with an AI simulator.">
-    <meta name="theme-color" content="#363636">
-    <meta name="apple-mobile-web-app-capable" content="yes">
-    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-    <meta name="apple-mobile-web-app-title" content="DiffConvSim">
-
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bulma@1.0.4/css/bulma.min.css">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
-
-    <style>
         html[data-theme="dark"] {}
         body {
             transition: background-color 0.3s ease, color 0.3s ease;
             overflow-x: hidden;
-            padding-top: 3.25rem;
+            /* Dynamically adjust body's top padding to account for navbar's height AND top safe area inset */
+            padding-top: calc(3.25rem + env(safe-area-inset-top, 0px)); /* 3.25rem is Bulma's default navbar height */
             min-height: 100vh;
             display: flex;
             flex-direction: column;
@@ -78,7 +62,17 @@
             left: 0;
             right: 0;
             z-index: 900;
+            width: 100%; /* Ensure it spans full width before padding */
+            box-sizing: border-box; /* Padding should be included within the 100% width */
+
+            /* Apply safe area padding to the navbar element itself */
+            padding-top: env(safe-area-inset-top, 0px);    /* For top notch/status bar */
+            padding-left: env(safe-area-inset-left, 0px);  /* For side notches/insets */
+            padding-right: env(safe-area-inset-right, 0px); /* For side notches/insets */
+            /* padding-bottom: env(safe-area-inset-bottom, 0px); /* Usually not needed for a top navbar */
         }
+        /* The .container within the navbar will then naturally fit within these padded bounds */
+
         #app-navbar .navbar-brand > .navbar-item.app-brand-link {
             display: none !important;
         }
@@ -93,8 +87,8 @@
             color: hsl(141, 53%, 53%) !important;
         }
 
-        #home-page, #about-page { /* Apply common styling to home and about */
-            padding-top: 1.5rem;
+        #home-page, #about-page {
+            padding-top: 1.5rem; /* Existing padding to space content from navbar */
             align-items: center;
         }
         #home-page .section, #about-page .section {
@@ -132,7 +126,7 @@
         }
 
         #chat-page {
-             padding-top: 1.5rem;
+             padding-top: 1.5rem; /* Existing padding to space content from navbar */
              align-items: center;
         }
         #chat-page-content {
@@ -178,11 +172,14 @@
             left: 0;
             right: 0;
             z-index: 800;
+            /* Adjust for bottom safe area if needed, e.g., for home bar */
+            padding-bottom: calc(0.5rem + env(safe-area-inset-bottom, 0px));
         }
         #errorLogContainer {
             margin: 1rem;
             font-size: 0.8em;
-            padding-bottom: 2rem;
+            /* Adjust padding if mainStatusFooter is fixed and taking space */
+            padding-bottom: calc(2rem + env(safe-area-inset-bottom, 0px)); /* if mainStatusFooter is fixed */
         }
         #errorLog {
             max-height: 100px;
@@ -200,14 +197,15 @@
     </style>
 </head>
 <body>
-
+    <!-- Splash Screen -->
     <div id="splash-screen" class="page is-active">
         <h1 class="title">Difficult Conversations Simulator</h1>
         <p class="copyright">© Shariq Ali khan</p>
     </div>
 
+    <!-- Navigation Bar -->
     <nav id="app-navbar" class="navbar is-fixed-top is-dark is-hidden-completely" role="navigation" aria-label="main navigation">
-        <div class="container">
+        <div class="container"> {/* Bulma's .container will now be within the safe-area padded navbar */}
             <div class="navbar-brand">
                 <a class="navbar-item app-brand-link" href="#">
                     <span class="icon is-medium mr-2"><i class="fas fa-comments"></i></span>
@@ -316,13 +314,12 @@
                     <p><strong>Disclaimer:</strong> The AI's responses are generated and may not always perfectly reflect real-human reactions. This tool is for practice and preparation purposes. Always use your best judgment in real-life situations.</p>
                     <hr>
                     <p class="has-text-centered is-size-7">
-                        <em>More placeholder text can go here. For example, version number, links to resources, or further acknowledgments.</em>
+                        <em>Version 1.0.0. More placeholder text can go here.</em>
                     </p>
                 </div>
             </div>
         </section>
     </div>
-
 
     <!-- API Key Modal -->
     <div id="api-key-modal" class="modal">
@@ -370,7 +367,7 @@
 
     <script type="module">
         const PWA_SETUP = {
-            SW_VERSION_REFERENCE: 'v1.0.8', // Increment if sw.js or index.html changes
+            SW_VERSION_REFERENCE: 'v1.0.8', // Remember to update sw.js SW_VERSION too
             APP_NAME: "Difficult Conversations Simulator",
             SHORT_NAME: "DiffConvSim",
             DESCRIPTION: "Practice difficult conversations with an AI simulator.",
@@ -432,7 +429,7 @@
             splash: document.getElementById('splash-screen'),
             home: document.getElementById('home-page'),
             chat: document.getElementById('chat-page'),
-            about: document.getElementById('about-page') // Added About page
+            about: document.getElementById('about-page')
         };
         const apiKeyModal = document.getElementById('api-key-modal');
         const apiKeyButtonHome = document.getElementById('api-key-button-home');
@@ -455,7 +452,7 @@
         const errorLogDiv = document.getElementById('errorLog');
         const navHomeButton = document.getElementById('nav-home-button');
         const navChatButton = document.getElementById('nav-chat-button');
-        const navAboutButton = document.getElementById('nav-about-button'); // Added About button
+        const navAboutButton = document.getElementById('nav-about-button');
         const navApiKeyStatusLink = document.getElementById('navApiKeyStatusLink');
         const navbarBurger = document.querySelector('.navbar-burger');
         const navbarMenu = document.getElementById('navbarMenu');
@@ -512,7 +509,7 @@
 
                 navHomeButton.classList.toggle('is-active', pageId === 'home');
                 navChatButton.classList.toggle('is-active', pageId === 'chat');
-                navAboutButton.classList.toggle('is-active', pageId === 'about'); // Toggle for About
+                navAboutButton.classList.toggle('is-active', pageId === 'about');
                 
                 navChatButton.classList.toggle('is-hidden-completely', pageId !== 'chat' && geminiApiHistory.length === 0);
                 appNavbar.classList.toggle('is-hidden-completely', pageId === 'splash');
