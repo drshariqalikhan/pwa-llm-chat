@@ -62,6 +62,14 @@
             0% { opacity: 0; transform: scale(0.8); }
             100% { opacity: 1; transform: scale(1); }
         }
+        #splash-screen .copyright {
+            position: absolute;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            font-size: 0.8rem;
+            color: hsl(0, 0%, 60%);
+        }
 
         #app-navbar.is-fixed-top {
             box-shadow: 0 2px 4px rgba(0,0,0,0.2);
@@ -71,16 +79,25 @@
             right: 0;
             z-index: 900;
         }
-        /* Hide the app title/logo in the navbar */
         #app-navbar .navbar-brand > .navbar-item.app-brand-link {
             display: none !important;
         }
+        #navApiKeyStatusLink {
+            font-size: 0.9em;
+        }
+        #navApiKeyStatusLink.key-not-set {
+            color: hsl(348, 86%, 61%) !important;
+            font-weight: bold;
+        }
+         #navApiKeyStatusLink.key-set {
+            color: hsl(141, 53%, 53%) !important;
+        }
 
-        #home-page {
+        #home-page, #about-page { /* Apply common styling to home and about */
             padding-top: 1.5rem;
             align-items: center;
         }
-        #home-page .section {
+        #home-page .section, #about-page .section {
             width: 100%;
             max-width: 700px;
             padding: 1.5rem;
@@ -90,7 +107,6 @@
             text-align: center;
         }
 
-        /* API Key Modal fixes */
         #api-key-modal .modal-card {
             max-width: 90%;
             width: 500px;
@@ -187,6 +203,7 @@
 
     <div id="splash-screen" class="page is-active">
         <h1 class="title">Difficult Conversations Simulator</h1>
+        <p class="copyright">© Shariq Ali khan</p>
     </div>
 
     <nav id="app-navbar" class="navbar is-fixed-top is-dark is-hidden-completely" role="navigation" aria-label="main navigation">
@@ -207,11 +224,10 @@
                 <div class="navbar-start">
                     <a class="navbar-item" id="nav-home-button">Setup Conversation</a>
                     <a class="navbar-item is-hidden-completely" id="nav-chat-button">Chat Simulator</a>
+                    <a class="navbar-item" id="nav-about-button">About</a>
                 </div>
                  <div class="navbar-end">
-                    <div class="navbar-item">
-                        <p id="navApiKeyStatus" class="has-text-grey-light is-size-7"></p>
-                    </div>
+                    <a class="navbar-item" id="navApiKeyStatusLink">API Key: Status</a>
                 </div>
             </div>
         </div>
@@ -223,42 +239,36 @@
             <div class="container">
                 <h2 class="title is-4 has-text-centered">Setup Your Conversation Scenario</h2>
                 <p class="subtitle is-6 has-text-centered mb-5">Describe the situation to prepare the AI for the simulation.</p>
-
                 <div class="field">
                     <label class="label" for="conflict-details">Describe the Conflict/Difficult Conversation:</label>
                     <div class="control">
                         <textarea class="textarea" id="conflict-details" placeholder="e.g., I need to talk to my team member about their declining performance..." rows="4"></textarea>
                     </div>
                 </div>
-
                 <div class="field">
                     <label class="label" for="llm-character-role">Who should the AI pretend to be?</label>
                     <div class="control">
                         <input class="input" type="text" id="llm-character-role" placeholder="e.g., My underperforming team member, John">
                     </div>
                 </div>
-
                 <div class="field">
                     <label class="label" for="most-desired-sol">What is your MOST desired outcome?</label>
                     <div class="control">
                         <input class="input" type="text" id="most-desired-sol" placeholder="e.g., John acknowledges the issues and commits to an improvement plan.">
                     </div>
                 </div>
-
                 <div class="field">
                     <label class="label" for="least-desired-sol">What is your LEAST desired outcome?</label>
                     <div class="control">
                         <input class="input" type="text" id="least-desired-sol" placeholder="e.g., John gets defensive, denies any problem, and our relationship sours.">
                     </div>
                 </div>
-
                 <div class="field">
                     <label class="label" for="compromised-sol">What's a potential COMPROMISED solution you might consider?</label>
                     <div class="control">
                         <input class="input" type="text" id="compromised-sol" placeholder="e.g., We agree on smaller, initial steps for improvement with a follow-up review.">
                     </div>
                 </div>
-
                 <div class="button-container">
                     <button class="button is-primary is-medium" id="proceed-to-chat-button">Proceed to Simulation</button>
                 </div>
@@ -286,6 +296,33 @@
             </div>
         </div>
     </div>
+
+    <!-- About Page -->
+    <div id="about-page" class="page">
+        <section class="section">
+            <div class="container">
+                <h2 class="title is-4 has-text-centered">About This Simulator</h2>
+                <div class="content">
+                    <p>This application is designed to help you practice and prepare for difficult conversations by simulating them with an AI.</p>
+                    <p><strong>Features:</strong></p>
+                    <ul>
+                        <li>Define the context of your conversation.</li>
+                        <li>Specify the role the AI should play.</li>
+                        <li>Outline your desired and undesired outcomes.</li>
+                        <li>Receive initial strategic options from the AI.</li>
+                        <li>Engage in a role-play conversation to hone your skills.</li>
+                    </ul>
+                    <p>This simulator uses Google's Gemini API to power the AI responses. You will need to provide your own Gemini API key to use this application.</p>
+                    <p><strong>Disclaimer:</strong> The AI's responses are generated and may not always perfectly reflect real-human reactions. This tool is for practice and preparation purposes. Always use your best judgment in real-life situations.</p>
+                    <hr>
+                    <p class="has-text-centered is-size-7">
+                        <em>More placeholder text can go here. For example, version number, links to resources, or further acknowledgments.</em>
+                    </p>
+                </div>
+            </div>
+        </section>
+    </div>
+
 
     <!-- API Key Modal -->
     <div id="api-key-modal" class="modal">
@@ -333,7 +370,7 @@
 
     <script type="module">
         const PWA_SETUP = {
-            SW_VERSION_REFERENCE: 'v1.0.6',
+            SW_VERSION_REFERENCE: 'v1.0.8', // Increment if sw.js or index.html changes
             APP_NAME: "Difficult Conversations Simulator",
             SHORT_NAME: "DiffConvSim",
             DESCRIPTION: "Practice difficult conversations with an AI simulator.",
@@ -395,6 +432,7 @@
             splash: document.getElementById('splash-screen'),
             home: document.getElementById('home-page'),
             chat: document.getElementById('chat-page'),
+            about: document.getElementById('about-page') // Added About page
         };
         const apiKeyModal = document.getElementById('api-key-modal');
         const apiKeyButtonHome = document.getElementById('api-key-button-home');
@@ -417,7 +455,8 @@
         const errorLogDiv = document.getElementById('errorLog');
         const navHomeButton = document.getElementById('nav-home-button');
         const navChatButton = document.getElementById('nav-chat-button');
-        const navApiKeyStatus = document.getElementById('navApiKeyStatus'); 
+        const navAboutButton = document.getElementById('nav-about-button'); // Added About button
+        const navApiKeyStatusLink = document.getElementById('navApiKeyStatusLink');
         const navbarBurger = document.querySelector('.navbar-burger');
         const navbarMenu = document.getElementById('navbarMenu');
         const appBrandLink = document.querySelector('.app-brand-link');
@@ -473,6 +512,8 @@
 
                 navHomeButton.classList.toggle('is-active', pageId === 'home');
                 navChatButton.classList.toggle('is-active', pageId === 'chat');
+                navAboutButton.classList.toggle('is-active', pageId === 'about'); // Toggle for About
+                
                 navChatButton.classList.toggle('is-hidden-completely', pageId !== 'chat' && geminiApiHistory.length === 0);
                 appNavbar.classList.toggle('is-hidden-completely', pageId === 'splash');
 
@@ -483,6 +524,7 @@
         }
         navHomeButton.addEventListener('click', (e) => { e.preventDefault(); navigateTo('home'); });
         navChatButton.addEventListener('click', (e) => { e.preventDefault(); navigateTo('chat'); });
+        navAboutButton.addEventListener('click', (e) => { e.preventDefault(); navigateTo('about'); });
         
         if (navbarBurger) {
             navbarBurger.addEventListener('click', () => {
@@ -491,22 +533,32 @@
             });
         }
 
+        if (navApiKeyStatusLink) {
+            navApiKeyStatusLink.addEventListener('click', (e) => {
+                e.preventDefault();
+                openApiKeyModal();
+            });
+        }
+
         function loadGeminiApiKeyFromStorage() {
             const storedKey = localStorage.getItem(GEMINI_API_KEY_STORAGE_KEY);
+            navApiKeyStatusLink.classList.remove('key-set', 'key-not-set');
             if (storedKey) {
                 geminiApiKey = storedKey;
                 geminiApiKeyInputModal.value = storedKey;
                 apiKeyButtonHome.classList.remove('is-danger');
                 apiKeyButtonHome.classList.add('is-success');
                 apiKeyButtonHome.innerHTML = '<span class="icon"><i class="fas fa-check-circle"></i></span><span>API Key Set</span>';
-                navApiKeyStatus.textContent = "API Key: Set";
+                navApiKeyStatusLink.textContent = "API Key: Set";
+                navApiKeyStatusLink.classList.add('key-set');
                 isGeminiKeyValid = true;
                 return true;
             } else {
                 apiKeyButtonHome.classList.add('is-danger');
                 apiKeyButtonHome.classList.remove('is-success');
                 apiKeyButtonHome.innerHTML = '<span class="icon"><i class="fas fa-exclamation-triangle"></i></span><span>Set API Key</span>';
-                navApiKeyStatus.textContent = "API Key: Not Set";
+                navApiKeyStatusLink.textContent = "API Key: Not Set";
+                navApiKeyStatusLink.classList.add('key-not-set');
                 isGeminiKeyValid = false;
                 return false;
             }
@@ -618,7 +670,7 @@ Begin by presenting Option A and Option B.`;
         }
         async function sendInitialBotMessage() { 
              if (!isGeminiKeyValid) {
-                addMessageToChatUI("API Key is not set or invalid. Please set it up on the home page.", "assistant", true);
+                addMessageToChatUI("API Key is not set or invalid. Please set it up on the home page or via the navbar menu.", "assistant", true);
                 logError("Chat Init", "Gemini API key not valid.");
                 sendButtonChat.disabled = true;
                 userInputChat.disabled = true;
