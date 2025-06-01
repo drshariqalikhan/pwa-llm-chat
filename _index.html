@@ -1,68 +1,860 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" data-theme="dark">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <title>Difficult Conversations Simulator</title>
 
-    <title>Web-LLM Chat (MLCEngine)</title>
-    <meta name="description" content="A Web-LLM chat application using the MLCEngine API.">
-    <link rel="manifest" href="manifest.json">
-
-    <!-- PWA Capability Meta Tags -->
-    <meta name="mobile-web-app-capable" content="yes"> <!-- Standard PWA meta tag -->
-    <meta name="apple-mobile-web-app-capable" content="yes"> <!-- For older iOS compatibility -->
-
+    <meta name="description" content="Practice difficult conversations with an AI simulator.">
+    <meta name="theme-color" content="#363636">
+    <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-    <meta name="apple-mobile-web-app-title" content="LLM Chat">
-    <link rel="apple-touch-icon" href="icons/icon-180x180.png">
+    <meta name="apple-mobile-web-app-title" content="DiffConvSim">
 
-    <!-- Theme Color for browser UI -->
-    <meta name="theme-color" content="#222222"> <!-- Default dark theme -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bulma@1.0.4/css/bulma.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
 
-    <link rel="stylesheet" href="style.css">
+    <style>
+        html[data-theme="dark"] {}
+        body {
+            transition: background-color 0.3s ease, color 0.3s ease;
+            overflow-x: hidden;
+            padding-top: calc(3.25rem + env(safe-area-inset-top, 0px)); 
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .page {
+            display: none;
+            opacity: 0;
+            transition: opacity 0.4s ease-in-out;
+            width: 100%;
+            box-sizing: border-box;
+            flex-grow: 1;
+        }
+        .page.is-active {
+            display: flex;
+            flex-direction: column;
+            opacity: 1;
+        }
+
+        #splash-screen {
+            justify-content: center;
+            align-items: center;
+            text-align: center;
+            background-color: hsl(0, 0%, 7%);
+            color: hsl(0, 0%, 96%);
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            z-index: 1000;
+            padding-top: 0;
+        }
+        #splash-screen .title {
+            font-size: 2.5rem;
+            color: hsl(0, 0%, 96%);
+            animation: fadeInScaleUp 1.5s ease-out forwards;
+        }
+        @keyframes fadeInScaleUp {
+            0% { opacity: 0; transform: scale(0.8); }
+            100% { opacity: 1; transform: scale(1); }
+        }
+        #splash-screen .copyright {
+            position: absolute;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            font-size: 0.8rem;
+            color: hsl(0, 0%, 60%);
+        }
+
+        #app-navbar.is-fixed-top {
+            box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            z-index: 900;
+            width: 100%; 
+            box-sizing: border-box; 
+            padding-top: env(safe-area-inset-top, 0px);    
+            padding-left: env(safe-area-inset-left, 0px);  
+            padding-right: env(safe-area-inset-right, 0px); 
+        }
+
+        #app-navbar .navbar-brand > .navbar-item.app-brand-link {
+            display: none !important;
+        }
+        #navApiKeyStatusLink {
+            font-size: 0.9em;
+        }
+        #navApiKeyStatusLink.key-not-set {
+            color: hsl(348, 86%, 61%) !important;
+            font-weight: bold;
+        }
+         #navApiKeyStatusLink.key-set {
+            color: hsl(141, 53%, 53%) !important;
+        }
+
+        #home-page, #about-page { 
+            padding-top: 1.5rem;
+            align-items: center;
+        }
+        #home-page .section, #about-page .section {
+            width: 100%;
+            max-width: 700px;
+            padding: 1.5rem;
+        }
+        #home-page .button-container {
+            margin-top: 1.5rem;
+            text-align: center;
+        }
+
+        #api-key-modal .modal-card {
+            max-width: 90%;
+            width: 500px;
+        }
+        #api-key-modal .modal-card-body .content,
+        #api-key-modal .modal-card-body .api-key-instructions {
+            word-break: break-word;
+        }
+        #api-key-modal .modal-card-foot {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: flex-end;
+            gap: 0.5rem;
+        }
+        #api-key-modal .modal-card-foot button {
+           margin-bottom: 0.5rem;
+        }
+        #api-key-modal .modal-card-foot #clearGeminiApiKeyButtonModal {
+            margin-right: auto;
+        }
+        #geminiApiKeyStatusModal .message-body {
+            word-break: break-word;
+        }
+
+        #chat-page {
+             padding-top: 1.5rem; 
+             align-items: center;
+        }
+        #chat-page-content {
+            display: flex;
+            flex-direction: column;
+            width: 100%;
+            max-width: 800px;
+            flex-grow: 1;
+        }
+        #chat-box {
+            flex-grow: 1;
+            overflow-y: auto;
+            padding: 1rem;
+            border: 1px solid hsl(0, 0%, 29%);
+            border-radius: 6px;
+            margin-bottom: 1rem;
+            background-color: hsl(0, 0%, 14%);
+        }
+        .message-container { margin-bottom: 10px; display: flex; animation: slideInUp 0.3s ease-out; }
+        @keyframes slideInUp {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .message-bubble { padding: 0.75rem 1rem; border-radius: 15px; max-width: 80%; word-wrap: break-word; line-height: 1.4; font-size: 0.95rem; }
+        .message-container.user { justify-content: flex-end; }
+        .message-container.user .message-bubble { background-color: hsl(204, 71%, 53%); color: white; border-bottom-right-radius: 5px; }
+        .message-container.assistant .message-bubble { background-color: hsl(0, 0%, 29%); color: hsl(0, 0%, 96%); border-bottom-left-radius: 5px; }
+        .message-container.error .message-bubble { background-color: hsl(348, 86%, 61%); color: white; }
+
+        #input-area { display: flex; padding: 0 1rem 1rem 1rem; }
+        #user-input-chat { flex-grow: 1; margin-right: 0.5rem; }
+        #send-button-chat.is-loading {
+            pointer-events: none;
+        }
+
+        #mainStatusFooter {
+            font-size: 0.8rem;
+            padding: 0.5rem 1rem;
+            background-color: hsl(0, 0%, 21%);
+            text-align: center;
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            z-index: 800;
+            padding-bottom: calc(0.5rem + env(safe-area-inset-bottom, 0px));
+        }
+        #errorLogContainer {
+            margin: 1rem;
+            font-size: 0.8em;
+            padding-bottom: calc(2rem + env(safe-area-inset-bottom, 0px)); 
+        }
+        #errorLog {
+            max-height: 100px;
+            overflow-y: auto;
+            background-color: hsl(0, 0%, 18%);
+            border: 1px solid hsl(0, 0%, 29%);
+            padding: 0.5rem;
+            border-radius: 4px;
+            white-space: pre-wrap;
+        }
+        .log-entry { margin-bottom: 5px; color: hsl(348, 100%, 71%); }
+        .log-entry pre { color: hsl(348, 100%, 81%); white-space: pre-wrap; word-break: break-all;}
+
+        .is-hidden-completely { display: none !important; }
+    </style>
 </head>
 <body>
-    <div class="app-container">
-        <header>
-            <h1>Web-LLM Chat (MLCEngine)</h1>
-            <button id="theme-toggle">Toggle Theme</button>
-        </header>
 
-        <div class="settings-area">
-            <h2>Settings</h2>
-            <div>
-                <label for="model-select">Select LLM Model:</label>
-                <select id="model-select">
-                    <!-- Options will be populated by JS -->
-                </select>
-            </div>
-            <button id="load-model-button">Load Selected Model</button>
-            <p id="current-settings-display"></p>
-        </div>
-
-        <main class="chat-area">
-            <div id="chat-messages">
-                <div id="llm-status" class="status-message">Select a model and click "Load Selected Model".</div>
-                <!-- Chat messages will be appended here -->
-            </div>
-            <div class="chat-input-area">
-                <textarea id="message-input" placeholder="Type your message..." rows="2" disabled></textarea>
-                <button id="send-button" disabled>Send</button>
-                <button id="voice-button" title="Voice Input (Future)">🎤</button>
-            </div>
-        </main>
-
-        <footer>
-            <h2>Event & Error Log</h2>
-            <div id="log-container">
-                <!-- Log messages will be appended here -->
-            </div>
-            <button id="clear-log-button">Clear Log</button>
-            <div id="chat-stats" class="status-message hidden"></div>
-        </footer>
+    <div id="splash-screen" class="page is-active">
+        <h1 class="title">Difficult Conversations Simulator</h1>
+        <p class="copyright">© Shariq Ali khan</p>
     </div>
 
-    <!-- Script must be type="module" for top-level import -->
-    <script type="module" src="script.js"></script>
+    <nav id="app-navbar" class="navbar is-fixed-top is-dark is-hidden-completely" role="navigation" aria-label="main navigation">
+        <div class="container">
+            <div class="navbar-brand">
+                <a class="navbar-item app-brand-link" href="#">
+                    <span class="icon is-medium mr-2"><i class="fas fa-comments"></i></span>
+                    <span class="app-title-navbar">DiffConvSim</span>
+                </a>
+                 <a role="button" class="navbar-burger" aria-label="menu" aria-expanded="false" data-target="navbarMenu">
+                    <span aria-hidden="true"></span>
+                    <span aria-hidden="true"></span>
+                    <span aria-hidden="true"></span>
+                    <span aria-hidden="true"></span>
+                </a>
+            </div>
+            <div id="navbarMenu" class="navbar-menu">
+                <div class="navbar-start">
+                    <a class="navbar-item" id="nav-home-button">Setup Conversation</a>
+                    <a class="navbar-item is-hidden-completely" id="nav-chat-button">Chat Simulator</a>
+                    <a class="navbar-item" id="nav-about-button">About</a>
+                </div>
+                 <div class="navbar-end">
+                    <a class="navbar-item" id="navApiKeyStatusLink">API Key: Status</a>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Home Page -->
+    <div id="home-page" class="page">
+        <section class="section">
+            <div class="container">
+                <h2 class="title is-4 has-text-centered">Setup Your Conversation Scenario</h2>
+                <p class="subtitle is-6 has-text-centered mb-5">Describe the situation to prepare the AI for the simulation.</p>
+                <div class="field">
+                    <label class="label" for="conflict-details">Describe the Conflict/Difficult Conversation:</label>
+                    <div class="control">
+                        <textarea class="textarea" id="conflict-details" placeholder="e.g., I need to talk to my team member about their declining performance..." rows="4"></textarea>
+                    </div>
+                </div>
+                <div class="field">
+                    <label class="label" for="llm-character-role">Who should the AI pretend to be?</label>
+                    <div class="control">
+                        <input class="input" type="text" id="llm-character-role" placeholder="e.g., My underperforming team member, John">
+                    </div>
+                </div>
+                <div class="field">
+                    <label class="label" for="most-desired-sol">What is your MOST desired outcome?</label>
+                    <div class="control">
+                        <input class="input" type="text" id="most-desired-sol" placeholder="e.g., John acknowledges the issues and commits to an improvement plan.">
+                    </div>
+                </div>
+                <div class="field">
+                    <label class="label" for="least-desired-sol">What is your LEAST desired outcome?</label>
+                    <div class="control">
+                        <input class="input" type="text" id="least-desired-sol" placeholder="e.g., John gets defensive, denies any problem, and our relationship sours.">
+                    </div>
+                </div>
+                <div class="field">
+                    <label class="label" for="compromised-sol">What's a potential COMPROMISED solution you might consider?</label>
+                    <div class="control">
+                        <input class="input" type="text" id="compromised-sol" placeholder="e.g., We agree on smaller, initial steps for improvement with a follow-up review.">
+                    </div>
+                </div>
+                <div class="button-container">
+                    <button class="button is-primary is-medium" id="proceed-to-chat-button">Proceed to Simulation</button>
+                </div>
+                 <div class="has-text-centered mt-4">
+                    <button class="button is-small" id="api-key-button-home">API Key Setup</button>
+                </div>
+            </div>
+        </section>
+    </div>
+
+    <!-- Chat Page -->
+    <div id="chat-page" class="page">
+        <div id="chat-page-content">
+            <div id="chat-box"></div>
+            <div id="input-area" class="field has-addons">
+                <div class="control is-expanded">
+                    <input class="input" type="text" id="user-input-chat" placeholder="Type your message..." disabled>
+                </div>
+                <div class="control">
+                    <button class="button is-info" id="send-button-chat" disabled>
+                        <span class="icon"><i class="fas fa-paper-plane"></i></span>
+                        <span>Send</span>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- About Page -->
+    <div id="about-page" class="page">
+        <section class="section">
+            <div class="container">
+                <h2 class="title is-4 has-text-centered">About This Simulator</h2>
+                <div class="content">
+                    <p>This application is designed to help you practice and prepare for difficult conversations by simulating them with an AI.</p>
+                    <p><strong>Features:</strong></p>
+                    <ul>
+                        <li>Define the context of your conversation.</li>
+                        <li>Specify the role the AI should play.</li>
+                        <li>Outline your desired and undesired outcomes.</li>
+                        <li>Receive initial strategic options from the AI.</li>
+                        <li>Engage in a role-play conversation to hone your skills.</li>
+                    </ul>
+                    <p>This simulator uses Google's Gemini API to power the AI responses. You will need to provide your own Gemini API key to use this application.</p>
+                    <p><strong>Disclaimer:</strong> The AI's responses are generated and may not always perfectly reflect real-human reactions. This tool is for practice and preparation purposes. Always use your best judgment in real-life situations.</p>
+                    <hr>
+                    <p class="has-text-centered is-size-7">
+                        <em>Version 1.0.0. More placeholder text can go here.</em>
+                    </p>
+                </div>
+            </div>
+        </section>
+    </div>
+
+    <!-- API Key Modal -->
+    <div id="api-key-modal" class="modal">
+        <div class="modal-background"></div>
+        <div class="modal-card">
+            <header class="modal-card-head">
+                <p class="modal-card-title">Gemini API Key Setup</p>
+                <button class="delete" aria-label="close" id="close-api-modal-button"></button>
+            </header>
+            <section class="modal-card-body">
+                <div class="field">
+                    <label class="label" for="geminiApiKeyInputModal">Gemini API Key:</label>
+                    <div class="control has-icons-left">
+                        <input class="input" type="password" id="geminiApiKeyInputModal" placeholder="Paste your API Key here">
+                        <span class="icon is-small is-left"><i class="fas fa-key"></i></span>
+                    </div>
+                </div>
+                <div class="content api-key-instructions">
+                    <p><strong>How to get a Gemini API Key:</strong></p>
+                    <ul>
+                        <li>Go to <a href="https://aistudio.google.com/app/apikey" target="_blank" rel="noopener noreferrer">Google AI Studio</a>.</li>
+                        <li>Sign in with your Google account.</li>
+                        <li>Click on "Get API key" or "Create API key in new project".</li>
+                        <li>Copy the generated API key and paste it above.</li>
+                        <li>Make sure the Gemini API (Generative Language API) is enabled for your project in Google Cloud Console if you created a new project.</li>
+                    </ul>
+                </div>
+                <div id="geminiApiKeyStatusModal" class="message is-small is-hidden-completely">
+                    <div class="message-body"></div>
+                </div>
+            </section>
+            <footer class="modal-card-foot">
+                <button class="button is-danger is-outlined" id="clearGeminiApiKeyButtonModal">Clear Stored Key</button>
+                <button class="button is-success" id="saveGeminiApiKeyButtonModal">Save & Test</button>
+                <button class="button" id="cancel-api-modal-button">Cancel</button>
+            </footer>
+        </div>
+    </div>
+
+    <footer id="mainStatusFooter" class="is-hidden-completely">Current Status...</footer>
+    <div id="errorLogContainer" class="is-hidden-completely">
+        <p class="has-text-weight-bold">Error Log:</p>
+        <div id="errorLog"></div>
+    </div>
+
+    <script type="module">
+        const PWA_SETUP = {
+            SW_VERSION_REFERENCE: 'v1.0.8',
+            APP_NAME: "Difficult Conversations Simulator",
+            SHORT_NAME: "DiffConvSim",
+            DESCRIPTION: "Practice difficult conversations with an AI simulator.",
+            THEME_COLOR: "#363636",
+            BACKGROUND_COLOR: "#1a1a1a", 
+            START_URL: "./index.html",
+
+            createSvgDataUrl: function(svgString) {
+                return `data:image/svg+xml;base64,${btoa(unescape(encodeURIComponent(svgString)))}`;
+            },
+            generateIcons: function() {
+                const iconSvgContent = `<path fill="currentColor" d="M20 2H4c-1.1 0-2 .9-2 2v18l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zm-2 12H6v-2h12v2zm0-3H6V9h12v2zm0-3H6V6h12v2z"/>`;
+                const iconSvgTemplate = (size, bgColor = this.THEME_COLOR, fgColor = "white") => `
+                    <svg xmlns="http://www.w3.org/2000/svg" width="${size}" height="${size}" viewBox="0 0 24 24">
+                        <rect width="24" height="24" fill="${bgColor}"/>
+                        <g style="color:${fgColor};">${iconSvgContent}</g>
+                    </svg>`.trim();
+                this.appleTouchIconUrl = this.createSvgDataUrl(iconSvgTemplate(180));
+                this.manifestIconUrl192 = this.createSvgDataUrl(iconSvgTemplate(192));
+                this.manifestIconUrl512 = this.createSvgDataUrl(iconSvgTemplate(512));
+            },
+            setupManifest: function() {
+                const manifest = {
+                    name: this.APP_NAME, short_name: this.SHORT_NAME, description: this.DESCRIPTION,
+                    start_url: this.START_URL, display: "standalone", background_color: this.BACKGROUND_COLOR,
+                    theme_color: this.THEME_COLOR,
+                    icons: [
+                        { src: this.manifestIconUrl192, sizes: "192x192", type: "image/svg+xml", purpose: "any maskable" },
+                        { src: this.manifestIconUrl512, sizes: "512x512", type: "image/svg+xml", purpose: "any maskable" }
+                    ]
+                };
+                const manifestBlob = new Blob([JSON.stringify(manifest)], {type: 'application/json'});
+                const manifestUrl = URL.createObjectURL(manifestBlob);
+                const linkManifest = document.createElement('link');
+                linkManifest.rel = 'manifest'; linkManifest.href = manifestUrl;
+                document.head.appendChild(linkManifest);
+            },
+            setupAppleTouchIcon: function() {
+                const linkAppleIcon = document.createElement('link');
+                linkAppleIcon.rel = 'apple-touch-icon'; linkAppleIcon.href = this.appleTouchIconUrl;
+                document.head.appendChild(linkAppleIcon);
+            },
+            registerServiceWorker: function() {
+                if ('serviceWorker' in navigator) {
+                    navigator.serviceWorker.register('./sw.js')
+                        .then(reg => console.log('Service Worker registered:', reg.scope))
+                        .catch(err => console.error('Service Worker registration failed:', err));
+                }
+            },
+            init: function() {
+                try {
+                    this.generateIcons(); this.setupManifest(); this.setupAppleTouchIcon(); this.registerServiceWorker();
+                } catch (e) { console.error("PWA Setup Error:", e); }
+            }
+        };
+
+        const appNavbar = document.getElementById('app-navbar');
+        const pages = {
+            splash: document.getElementById('splash-screen'),
+            home: document.getElementById('home-page'),
+            chat: document.getElementById('chat-page'),
+            about: document.getElementById('about-page')
+        };
+        const apiKeyModal = document.getElementById('api-key-modal');
+        const apiKeyButtonHome = document.getElementById('api-key-button-home');
+        const saveGeminiApiKeyButtonModal = document.getElementById('saveGeminiApiKeyButtonModal');
+        const clearGeminiApiKeyButtonModal = document.getElementById('clearGeminiApiKeyButtonModal');
+        const geminiApiKeyInputModal = document.getElementById('geminiApiKeyInputModal');
+        const geminiApiKeyStatusModalDiv = document.getElementById('geminiApiKeyStatusModal');
+        const proceedToChatButton = document.getElementById('proceed-to-chat-button');
+
+        const conflictDetailsInput = document.getElementById('conflict-details');
+        const llmCharacterRoleInput = document.getElementById('llm-character-role');
+        const mostDesiredSolInput = document.getElementById('most-desired-sol');
+        const leastDesiredSolInput = document.getElementById('least-desired-sol');
+        const compromisedSolInput = document.getElementById('compromised-sol');
+
+        const chatBox = document.getElementById('chat-box');
+        const userInputChat = document.getElementById('user-input-chat');
+        const sendButtonChat = document.getElementById('send-button-chat');
+        
+        const errorLogDiv = document.getElementById('errorLog');
+        const navHomeButton = document.getElementById('nav-home-button');
+        const navChatButton = document.getElementById('nav-chat-button');
+        const navAboutButton = document.getElementById('nav-about-button');
+        const navApiKeyStatusLink = document.getElementById('navApiKeyStatusLink');
+        const navbarBurger = document.querySelector('.navbar-burger');
+        const navbarMenu = document.getElementById('navbarMenu');
+        const appBrandLink = document.querySelector('.app-brand-link');
+
+        let currentPageId = 'splash';
+        let geminiApiKey = null;
+        let isGeminiKeyValid = false;
+        let geminiApiHistory = [];
+        let currentSystemPrompt = "";
+
+        const GEMINI_API_KEY_STORAGE_KEY = 'geminiApiKey_diff_conv_sim_v2';
+        const GEMINI_MODEL_NAME = "gemini-1.5-flash-latest"; 
+        const GEMINI_API_BASE_URL = 'https://generativelanguage.googleapis.com/v1beta/models/';
+
+        function logError(errorSource, error) { 
+            console.error(errorSource, error);
+            const errorLogContainer = document.getElementById('errorLogContainer');
+            if(errorLogContainer) errorLogContainer.classList.remove('is-hidden-completely');
+            const timestamp = new Date().toLocaleTimeString();
+            const errorEntry = document.createElement('div');
+            errorEntry.classList.add('log-entry');
+            const errorMessageText = (error instanceof Error) ? error.message : String(error);
+            errorEntry.textContent = `[${timestamp}] ${errorSource}: ${errorMessageText}`;
+            if (error instanceof Error && error.stack) {
+                const stackTrace = document.createElement('pre');
+                stackTrace.textContent = error.stack;
+                errorEntry.appendChild(stackTrace);
+            }
+            if(errorLogDiv) {
+                 errorLogDiv.appendChild(errorEntry);
+                 errorLogDiv.scrollTop = errorLogDiv.scrollHeight;
+            }
+        }
+        function showStatusInModal(message, type = 'info') { 
+            geminiApiKeyStatusModalDiv.classList.remove('is-hidden-completely', 'is-info', 'is-success', 'is-warning', 'is-danger');
+            geminiApiKeyStatusModalDiv.classList.add(`is-${type}`);
+            geminiApiKeyStatusModalDiv.querySelector('.message-body').textContent = message;
+        }
+        function hideStatusInModal() { 
+            geminiApiKeyStatusModalDiv.classList.add('is-hidden-completely');
+        }
+        
+        function navigateTo(pageId) {
+            console.log(`Navigating to: ${pageId}`);
+            if (pages[currentPageId]) {
+                pages[currentPageId].classList.remove('is-active');
+            }
+            if (pages[pageId]) {
+                pages[pageId].classList.add('is-active');
+                currentPageId = pageId;
+                document.body.scrollTop = 0; 
+                document.documentElement.scrollTop = 0;
+
+                navHomeButton.classList.toggle('is-active', pageId === 'home');
+                navChatButton.classList.toggle('is-active', pageId === 'chat');
+                navAboutButton.classList.toggle('is-active', pageId === 'about');
+                
+                navChatButton.classList.toggle('is-hidden-completely', pageId !== 'chat' && geminiApiHistory.length === 0);
+                appNavbar.classList.toggle('is-hidden-completely', pageId === 'splash');
+
+            } else {
+                console.error("Page not found:", pageId);
+                logError("Navigation", `Page ID "${pageId}" not found in DOM.`);
+            }
+        }
+        navHomeButton.addEventListener('click', (e) => { e.preventDefault(); navigateTo('home'); });
+        navChatButton.addEventListener('click', (e) => { e.preventDefault(); navigateTo('chat'); });
+        navAboutButton.addEventListener('click', (e) => { e.preventDefault(); navigateTo('about'); });
+        
+        if (navbarBurger) {
+            navbarBurger.addEventListener('click', () => {
+                navbarBurger.classList.toggle('is-active');
+                navbarMenu.classList.toggle('is-active');
+            });
+        }
+
+        if (navApiKeyStatusLink) {
+            navApiKeyStatusLink.addEventListener('click', (e) => {
+                e.preventDefault();
+                openApiKeyModal();
+            });
+        }
+
+        function loadGeminiApiKeyFromStorage() {
+            const storedKey = localStorage.getItem(GEMINI_API_KEY_STORAGE_KEY);
+            navApiKeyStatusLink.classList.remove('key-set', 'key-not-set');
+            if (storedKey) {
+                geminiApiKey = storedKey;
+                geminiApiKeyInputModal.value = storedKey;
+                apiKeyButtonHome.classList.remove('is-danger');
+                apiKeyButtonHome.classList.add('is-success');
+                apiKeyButtonHome.innerHTML = '<span class="icon"><i class="fas fa-check-circle"></i></span><span>API Key Set</span>';
+                navApiKeyStatusLink.textContent = "API Key: Set";
+                navApiKeyStatusLink.classList.add('key-set');
+                isGeminiKeyValid = true;
+                return true;
+            } else {
+                apiKeyButtonHome.classList.add('is-danger');
+                apiKeyButtonHome.classList.remove('is-success');
+                apiKeyButtonHome.innerHTML = '<span class="icon"><i class="fas fa-exclamation-triangle"></i></span><span>Set API Key</span>';
+                navApiKeyStatusLink.textContent = "API Key: Not Set";
+                navApiKeyStatusLink.classList.add('key-not-set');
+                isGeminiKeyValid = false;
+                return false;
+            }
+        }
+        async function testAndSaveGeminiApiKey() { 
+            const key = geminiApiKeyInputModal.value.trim();
+            if (!key) {
+                showStatusInModal('API Key cannot be empty.', 'warning');
+                isGeminiKeyValid = false; 
+                return false;
+            }
+            showStatusInModal('Validating API Key...', 'info');
+            saveGeminiApiKeyButtonModal.classList.add('is-loading');
+            try {
+                const testApiUrl = `${GEMINI_API_BASE_URL}${GEMINI_MODEL_NAME}:generateContent?key=${key}`;
+                const response = await fetch(testApiUrl, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ "contents": [{"parts": [{"text": "Hi"}]}] })
+                });
+                if (response.ok) {
+                    localStorage.setItem(GEMINI_API_KEY_STORAGE_KEY, key);
+                    geminiApiKey = key;
+                    isGeminiKeyValid = true; 
+                    showStatusInModal('API Key is valid and saved successfully!', 'success');
+                    loadGeminiApiKeyFromStorage(); 
+                    setTimeout(() => closeApiKeyModal(), 1500); 
+                    return true;
+                } else {
+                    const errorData = await response.json();
+                    const errorMsg = `API Key validation failed: ${errorData.error?.message || response.statusText}. Please check your key.`;
+                    showStatusInModal(errorMsg, 'danger');
+                    logError("Gemini Key Validation", errorMsg);
+                    isGeminiKeyValid = false; 
+                    return false;
+                }
+            } catch (error) {
+                const errorMsg = `Error during API key validation: ${error.message}`;
+                showStatusInModal(errorMsg, 'danger');
+                logError("Gemini Key Validation Error", error);
+                isGeminiKeyValid = false; 
+                return false;
+            } finally {
+                saveGeminiApiKeyButtonModal.classList.remove('is-loading');
+            }
+        }
+        function clearGeminiApiKey() { 
+            localStorage.removeItem(GEMINI_API_KEY_STORAGE_KEY);
+            geminiApiKey = null;
+            isGeminiKeyValid = false; 
+            geminiApiKeyInputModal.value = '';
+            showStatusInModal('Stored API Key cleared.', 'info');
+            loadGeminiApiKeyFromStorage();
+        }
+        function openApiKeyModal() { 
+             apiKeyModal.classList.add('is-active'); hideStatusInModal(); 
+        }
+        function closeApiKeyModal() { 
+            apiKeyModal.classList.remove('is-active'); 
+        }
+        apiKeyButtonHome.addEventListener('click', openApiKeyModal);
+        saveGeminiApiKeyButtonModal.addEventListener('click', testAndSaveGeminiApiKey);
+        clearGeminiApiKeyButtonModal.addEventListener('click', clearGeminiApiKey);
+        document.getElementById('close-api-modal-button').addEventListener('click', closeApiKeyModal);
+        document.getElementById('cancel-api-modal-button').addEventListener('click', closeApiKeyModal);
+        apiKeyModal.querySelector('.modal-background').addEventListener('click', closeApiKeyModal);
+
+        function constructSystemPrompt(details, role, mostSol, leastSol, compSol) { 
+            return `You are acting as '${role}' in a simulated difficult conversation. The user is practicing how to navigate this situation.
+The context of the difficult conversation is:
+${details}
+
+The user's goals are:
+- Most desired outcome: ${mostSol}
+- Least desired outcome: ${leastSol}
+- A potential compromise the user is considering: ${compSol}
+
+Your task is to:
+1. First, offer the user two distinct strategic approaches (Option A and Option B) they could take to initiate or handle this conversation with you (as '${role}'), considering their stated goals and the conflict. Briefly explain each option. Use Markdown for bolding option labels like **Option A:**.
+2. Wait for the user to choose an option or to start the conversation in their own way.
+3. Once the user has chosen an option or started talking, fully embody the character of '${role}'. Respond naturally and realistically based on the persona and the situation described.
+4. Help the user practice by reacting to their statements. Do not lead the entire conversation; wait for the user's input at each step of the role-play.
+Your persona as '${role}' should be consistent throughout the simulation.
+Begin by presenting Option A and Option B.`;
+        }
+        function addMessageToChatUI(text, role, isError = false) { 
+            const container = document.createElement("div");
+            container.classList.add("message-container", role);
+            if (isError) container.classList.add("error");
+            const bubble = document.createElement("div");
+            bubble.classList.add("message-bubble");
+            let content = text.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
+            content = content.replace(/\n/g, '<br>');
+            bubble.innerHTML = content;
+            container.appendChild(bubble);
+            chatBox.appendChild(container);
+            chatBox.scrollTop = chatBox.scrollHeight;
+        }
+        function updateLastBotMessageInUI(content) { 
+            const lastBotMessageContainer = chatBox.querySelector('.message-container.assistant:last-child .message-bubble');
+            if (lastBotMessageContainer) {
+                let formattedContent = content.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
+                formattedContent = formattedContent.replace(/\n/g, '<br>');
+                lastBotMessageContainer.innerHTML = formattedContent;
+                chatBox.scrollTop = chatBox.scrollHeight;
+            } else { 
+                addMessageToChatUI(content, "assistant"); 
+            }
+        }
+        async function sendInitialBotMessage() { 
+             if (!isGeminiKeyValid) {
+                addMessageToChatUI("API Key is not set or invalid. Please set it up on the home page or via the navbar menu.", "assistant", true);
+                logError("Chat Init", "Gemini API key not valid.");
+                sendButtonChat.disabled = true;
+                userInputChat.disabled = true;
+                userInputChat.placeholder = "API Key Error. Please fix.";
+                return;
+            }
+            sendButtonChat.disabled = true;
+            sendButtonChat.classList.add('is-loading');
+            userInputChat.disabled = true;
+            userInputChat.placeholder = "AI is preparing initial options...";
+            chatBox.innerHTML = ''; 
+            geminiApiHistory = []; 
+            addMessageToChatUI("▍", "assistant"); 
+            let accumulatedMessage = "";
+            let animationFrameId;
+            let cursorVisible = true;
+            const typingIndicator = () => { 
+                if (!sendButtonChat.classList.contains('is-loading')) { 
+                    updateLastBotMessageInUI(accumulatedMessage);
+                    if (animationFrameId) cancelAnimationFrame(animationFrameId);
+                    return;
+                }
+                updateLastBotMessageInUI(accumulatedMessage + (cursorVisible ? "▍" : ""));
+                cursorVisible = !cursorVisible;
+                animationFrameId = requestAnimationFrame(typingIndicator);
+            };
+            animationFrameId = requestAnimationFrame(typingIndicator);
+            try {
+                const requestBody = {
+                    contents: [{ role: "user", parts: [{ text: "Let's begin the simulation. Please provide the initial options as per your instructions." }] }],
+                    systemInstruction: { parts: [{ text: currentSystemPrompt }] },
+                    generationConfig: { temperature: 0.7, topP: 0.95, maxOutputTokens: 2048 }
+                };
+                const response = await fetch(`${GEMINI_API_BASE_URL}${GEMINI_MODEL_NAME}:generateContent?key=${geminiApiKey}`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(requestBody)
+                });
+                sendButtonChat.classList.remove('is-loading'); 
+                if (animationFrameId) cancelAnimationFrame(animationFrameId); 
+                if (!response.ok) {
+                    const errorData = await response.json();
+                    throw new Error(`Gemini API Error (Initial): ${errorData.error?.message || response.statusText}`);
+                }
+                const data = await response.json();
+                if (data.candidates && data.candidates[0]?.content?.parts[0]?.text) {
+                    accumulatedMessage = data.candidates[0].content.parts[0].text;
+                    updateLastBotMessageInUI(accumulatedMessage);
+                    geminiApiHistory.push({ role: "model", parts: [{ text: accumulatedMessage }] });
+                    userInputChat.disabled = false;
+                    sendButtonChat.disabled = false;
+                    userInputChat.placeholder = "Type your response...";
+                    userInputChat.focus();
+                } else {
+                    throw new Error("Invalid response structure from Gemini (Initial).");
+                }
+            } catch (err) {
+                if (animationFrameId) cancelAnimationFrame(animationFrameId);
+                sendButtonChat.classList.remove('is-loading');
+                logError("Gemini InitialBotMsg", err);
+                updateLastBotMessageInUI(`Error getting initial advice: ${err.message}`);
+                userInputChat.disabled = true;
+                sendButtonChat.disabled = true;
+                userInputChat.placeholder = "Error during initialization.";
+            }
+        }
+        async function handleSendMessageToGemini() { 
+            const inputText = userInputChat.value.trim();
+            if (inputText.length === 0 || !isGeminiKeyValid || sendButtonChat.classList.contains('is-loading')) return;
+            addMessageToChatUI(inputText, "user");
+            geminiApiHistory.push({ role: "user", parts: [{ text: inputText }] });
+            userInputChat.value = "";
+            sendButtonChat.disabled = true;
+            sendButtonChat.classList.add('is-loading');
+            userInputChat.disabled = true;
+            userInputChat.placeholder = "AI is thinking...";
+            addMessageToChatUI("▍", "assistant"); 
+            let accumulatedMessage = "";
+            let animationFrameId;
+            let cursorVisible = true;
+            const typingIndicator = () => {
+                if (!sendButtonChat.classList.contains('is-loading')) {
+                    updateLastBotMessageInUI(accumulatedMessage);
+                    if (animationFrameId) cancelAnimationFrame(animationFrameId);
+                    return;
+                }
+                updateLastBotMessageInUI(accumulatedMessage + (cursorVisible ? "▍" : ""));
+                cursorVisible = !cursorVisible;
+                animationFrameId = requestAnimationFrame(typingIndicator);
+            };
+            animationFrameId = requestAnimationFrame(typingIndicator);
+            try {
+                const requestBody = {
+                    contents: geminiApiHistory, 
+                    systemInstruction: { parts: [{ text: currentSystemPrompt }] }, 
+                    generationConfig: { temperature: 0.7, topP: 0.95, maxOutputTokens: 2048 }
+                };
+                const response = await fetch(`${GEMINI_API_BASE_URL}${GEMINI_MODEL_NAME}:generateContent?key=${geminiApiKey}`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(requestBody)
+                });
+                sendButtonChat.classList.remove('is-loading');
+                if (animationFrameId) cancelAnimationFrame(animationFrameId);
+                if (!response.ok) {
+                    const errorData = await response.json();
+                    throw new Error(`Gemini API Error: ${errorData.error?.message || response.statusText}`);
+                }
+                const data = await response.json();
+                if (data.candidates && data.candidates[0]?.content?.parts[0]?.text) {
+                    accumulatedMessage = data.candidates[0].content.parts[0].text;
+                    updateLastBotMessageInUI(accumulatedMessage);
+                    geminiApiHistory.push({ role: "model", parts: [{ text: accumulatedMessage }] });
+                } else if (data.promptFeedback && data.promptFeedback.blockReason) {
+                    accumulatedMessage = `Blocked by API: ${data.promptFeedback.blockReason}.`;
+                    logError("Gemini Response Blocked", accumulatedMessage);
+                    updateLastBotMessageInUI(accumulatedMessage);
+                } else {
+                    throw new Error("Invalid response structure from Gemini.");
+                }
+            } catch (err) {
+                if (animationFrameId) cancelAnimationFrame(animationFrameId);
+                sendButtonChat.classList.remove('is-loading');
+                logError("Gemini SendMessage", err);
+                updateLastBotMessageInUI(`Error generating response: ${err.message}`);
+            } finally {
+                userInputChat.disabled = false;
+                sendButtonChat.disabled = false;
+                userInputChat.placeholder = "Type your response...";
+                if (currentPageId === 'chat') userInputChat.focus();
+            }
+        }
+        sendButtonChat.addEventListener("click", handleSendMessageToGemini);
+        userInputChat.addEventListener("keypress", (event) => {
+            if (event.key === "Enter" && !sendButtonChat.disabled && !sendButtonChat.classList.contains('is-loading')) {
+                event.preventDefault();
+                handleSendMessageToGemini();
+            }
+        });
+
+        proceedToChatButton.addEventListener('click', () => { 
+            const conflictDetails = conflictDetailsInput.value.trim();
+            const llmCharacterRole = llmCharacterRoleInput.value.trim();
+            const mostDesiredSol = mostDesiredSolInput.value.trim();
+            const leastDesiredSol = leastDesiredSolInput.value.trim();
+            const compromisedSol = compromisedSolInput.value.trim();
+            if (!conflictDetails || !llmCharacterRole || !mostDesiredSol || !leastDesiredSol) {
+                alert("Please fill in all required fields: Description, AI Role, Most and Least Desired Outcomes.");
+                return;
+            }
+            if (!isGeminiKeyValid) {
+                 openApiKeyModal();
+                 showStatusInModal("Please set and validate your Gemini API Key before proceeding.", "warning");
+                return;
+            }
+            currentSystemPrompt = constructSystemPrompt(
+                conflictDetails, llmCharacterRole, mostDesiredSol, leastDesiredSol, compromisedSol
+            );
+            navigateTo('chat');
+            sendInitialBotMessage();
+        });
+
+        function initializeApp() {
+            PWA_SETUP.init(); 
+            pages.splash.classList.add('is-active');
+            Object.values(pages).forEach(page => {
+                if (page.id !== 'splash-screen') page.classList.remove('is-active');
+            });
+            appNavbar.classList.add('is-hidden-completely'); 
+            if(appBrandLink) appBrandLink.classList.add('is-hidden-completely');
+
+            setTimeout(() => {
+                navigateTo('home'); 
+                loadGeminiApiKeyFromStorage();
+            }, 2000); 
+        }
+
+        document.addEventListener('DOMContentLoaded', initializeApp);
+    </script>
 </body>
 </html>

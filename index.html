@@ -98,6 +98,17 @@
          #navApiKeyStatusLink.key-set {
             color: hsl(141, 53%, 53%) !important;
         }
+        /* For displaying current model */
+        #currentModelDisplay {
+            font-size: 0.75rem;
+            color: hsl(0, 0%, 71%); /* Lighter grey */
+            margin-top: 0.5rem;
+            text-align: center;
+        }
+        #api-key-modal #currentModelDisplayModal { /* Specific for modal */
+             font-size: 0.8rem; color: hsl(0, 0%, 48%); margin-top: 8px; padding-top: 8px; border-top: 1px solid hsl(0, 0%, 21%);
+        }
+
 
         #home-page, #about-page { 
             padding-top: 1.5rem;
@@ -240,7 +251,6 @@
         </div>
     </nav>
 
-    <!-- Home Page -->
     <div id="home-page" class="page">
         <section class="section">
             <div class="container">
@@ -281,12 +291,12 @@
                 </div>
                  <div class="has-text-centered mt-4">
                     <button class="button is-small" id="api-key-button-home">API Key Setup</button>
-                </div>
+                 </div>
+                 <p id="currentModelDisplay"></p> <!-- For displaying current model on home page -->
             </div>
         </section>
     </div>
 
-    <!-- Chat Page -->
     <div id="chat-page" class="page">
         <div id="chat-page-content">
             <div id="chat-box"></div>
@@ -304,7 +314,6 @@
         </div>
     </div>
 
-    <!-- About Page -->
     <div id="about-page" class="page">
         <section class="section">
             <div class="container">
@@ -323,14 +332,13 @@
                     <p><strong>Disclaimer:</strong> The AI's responses are generated and may not always perfectly reflect real-human reactions. This tool is for practice and preparation purposes. Always use your best judgment in real-life situations.</p>
                     <hr>
                     <p class="has-text-centered is-size-7">
-                        <em>Version 1.0.0. More placeholder text can go here.</em>
+                        <em>Version 1.0.0.</em>
                     </p>
                 </div>
             </div>
         </section>
     </div>
 
-    <!-- API Key Modal -->
     <div id="api-key-modal" class="modal">
         <div class="modal-background"></div>
         <div class="modal-card">
@@ -359,6 +367,7 @@
                 <div id="geminiApiKeyStatusModal" class="message is-small is-hidden-completely">
                     <div class="message-body"></div>
                 </div>
+                 <p id="currentModelDisplayModal"></p> <!-- For displaying current model in API modal -->
             </section>
             <footer class="modal-card-foot">
                 <button class="button is-danger is-outlined" id="clearGeminiApiKeyButtonModal">Clear Stored Key</button>
@@ -376,7 +385,7 @@
 
     <script type="module">
         const PWA_SETUP = {
-            SW_VERSION_REFERENCE: 'v1.0.8',
+            SW_VERSION_REFERENCE: 'v1.0.9', // Increment if sw.js or index.html changes
             APP_NAME: "Difficult Conversations Simulator",
             SHORT_NAME: "DiffConvSim",
             DESCRIPTION: "Practice difficult conversations with an AI simulator.",
@@ -466,6 +475,9 @@
         const navbarBurger = document.querySelector('.navbar-burger');
         const navbarMenu = document.getElementById('navbarMenu');
         const appBrandLink = document.querySelector('.app-brand-link');
+        const currentModelDisplayHome = document.getElementById('currentModelDisplay');
+        const currentModelDisplayModal = document.getElementById('currentModelDisplayModal');
+
 
         let currentPageId = 'splash';
         let geminiApiKey = null;
@@ -474,10 +486,11 @@
         let currentSystemPrompt = "";
 
         const GEMINI_API_KEY_STORAGE_KEY = 'geminiApiKey_diff_conv_sim_v2';
-        const GEMINI_MODEL_NAME = "gemini-1.5-flash-latest"; 
-        const GEMINI_API_BASE_URL = 'https://generativelanguage.googleapis.com/v1beta/models/';
+        const GEMINI_MODEL_NAME_FALLBACK = "gemini-1.5-flash-latest"; // Fallback model
+        let currentGeminiModelName = GEMINI_MODEL_NAME_FALLBACK; // Will be updated dynamically
+        const GEMINI_API_BASE_URL = 'https://generativelanguage.googleapis.com/v1beta/'; // Base for all models
 
-        function logError(errorSource, error) { 
+        function logError(errorSource, error) { /* ... same ... */ 
             console.error(errorSource, error);
             const errorLogContainer = document.getElementById('errorLogContainer');
             if(errorLogContainer) errorLogContainer.classList.remove('is-hidden-completely');
@@ -496,16 +509,61 @@
                  errorLogDiv.scrollTop = errorLogDiv.scrollHeight;
             }
         }
-        function showStatusInModal(message, type = 'info') { 
+        function showStatusInModal(message, type = 'info') { /* ... same ... */ 
             geminiApiKeyStatusModalDiv.classList.remove('is-hidden-completely', 'is-info', 'is-success', 'is-warning', 'is-danger');
             geminiApiKeyStatusModalDiv.classList.add(`is-${type}`);
             geminiApiKeyStatusModalDiv.querySelector('.message-body').textContent = message;
         }
-        function hideStatusInModal() { 
+        function hideStatusInModal() { /* ... same ... */ 
             geminiApiKeyStatusModalDiv.classList.add('is-hidden-completely');
         }
+
+        function updateCurrentModelDisplay(modelName) {
+            const displayText = `Using Model: ${modelName}`;
+            if (currentModelDisplayHome) currentModelDisplayHome.textContent = displayText;
+            if (currentModelDisplayModal) currentModelDisplayModal.textContent = displayText;
+        }
         
-        function navigateTo(pageId) {
+        async function fetchAndSelectPreviewModel(apiKey) {
+            showStatusInModal('Fetching available models...', 'info');
+            try {
+                const response = await fetch(`${GEMINI_API_BASE_URL}models?key=${apiKey}`);
+                if (!response.ok) {
+                    const errorData = await response.json();
+                    throw new Error(`Failed to fetch models: ${errorData.error?.message || response.statusText}`);
+                }
+                const data = await response.json();
+                if (data.models && data.models.length > 0) {
+                    const previewModels = data.models.filter(model => model.name && model.name.includes("preview"));
+                    
+                    if (previewModels.length > 0) {
+                        // Simple strategy: pick the first preview model found.
+                        // More complex: sort by version/date if names allow.
+                        // Example: model.name is "models/gemini-1.5-pro-preview-0514"
+                        const selectedPreviewModel = previewModels[0]; 
+                        currentGeminiModelName = selectedPreviewModel.name.replace("models/", "");
+                        console.log("Selected Preview Model:", currentGeminiModelName);
+                        showStatusInModal(`Dynamically selected preview model: ${currentGeminiModelName}`, 'success');
+                    } else {
+                        currentGeminiModelName = GEMINI_MODEL_NAME_FALLBACK;
+                        console.log("No preview models found, using fallback:", currentGeminiModelName);
+                        showStatusInModal(`No preview models found. Using fallback: ${currentGeminiModelName}`, 'warning');
+                    }
+                } else {
+                    currentGeminiModelName = GEMINI_MODEL_NAME_FALLBACK;
+                    console.log("No models returned from API, using fallback:", currentGeminiModelName);
+                    showStatusInModal(`No models returned from API. Using fallback: ${currentGeminiModelName}`, 'warning');
+                }
+            } catch (error) {
+                logError("ModelFetching", error);
+                currentGeminiModelName = GEMINI_MODEL_NAME_FALLBACK;
+                console.log("Error fetching models, using fallback:", currentGeminiModelName);
+                showStatusInModal(`Error fetching models. Using fallback: ${currentGeminiModelName}. Details in error log.`, 'danger');
+            }
+            updateCurrentModelDisplay(currentGeminiModelName);
+        }
+        
+        function navigateTo(pageId) { /* ... same ... */ 
             console.log(`Navigating to: ${pageId}`);
             if (pages[currentPageId]) {
                 pages[currentPageId].classList.remove('is-active');
@@ -532,21 +590,21 @@
         navChatButton.addEventListener('click', (e) => { e.preventDefault(); navigateTo('chat'); });
         navAboutButton.addEventListener('click', (e) => { e.preventDefault(); navigateTo('about'); });
         
-        if (navbarBurger) {
+        if (navbarBurger) { /* ... same ... */ 
             navbarBurger.addEventListener('click', () => {
                 navbarBurger.classList.toggle('is-active');
                 navbarMenu.classList.toggle('is-active');
             });
         }
 
-        if (navApiKeyStatusLink) {
+        if (navApiKeyStatusLink) { /* ... same ... */ 
             navApiKeyStatusLink.addEventListener('click', (e) => {
                 e.preventDefault();
                 openApiKeyModal();
             });
         }
 
-        function loadGeminiApiKeyFromStorage() {
+        function loadGeminiApiKeyFromStorage() { /* ... same, but calls fetchAndSelectPreviewModel if key exists ... */ 
             const storedKey = localStorage.getItem(GEMINI_API_KEY_STORAGE_KEY);
             navApiKeyStatusLink.classList.remove('key-set', 'key-not-set');
             if (storedKey) {
@@ -558,6 +616,7 @@
                 navApiKeyStatusLink.textContent = "API Key: Set";
                 navApiKeyStatusLink.classList.add('key-set');
                 isGeminiKeyValid = true;
+                fetchAndSelectPreviewModel(geminiApiKey); // Fetch models when key is loaded
                 return true;
             } else {
                 apiKeyButtonHome.classList.add('is-danger');
@@ -566,10 +625,12 @@
                 navApiKeyStatusLink.textContent = "API Key: Not Set";
                 navApiKeyStatusLink.classList.add('key-not-set');
                 isGeminiKeyValid = false;
+                currentGeminiModelName = GEMINI_MODEL_NAME_FALLBACK; // Reset to fallback if no key
+                updateCurrentModelDisplay(currentGeminiModelName);
                 return false;
             }
         }
-        async function testAndSaveGeminiApiKey() { 
+        async function testAndSaveGeminiApiKey() { /* ... same, but calls fetchAndSelectPreviewModel on success ... */ 
             const key = geminiApiKeyInputModal.value.trim();
             if (!key) {
                 showStatusInModal('API Key cannot be empty.', 'warning');
@@ -579,7 +640,8 @@
             showStatusInModal('Validating API Key...', 'info');
             saveGeminiApiKeyButtonModal.classList.add('is-loading');
             try {
-                const testApiUrl = `${GEMINI_API_BASE_URL}${GEMINI_MODEL_NAME}:generateContent?key=${key}`;
+                // Use the fallback model for the initial key validation test call
+                const testApiUrl = `${GEMINI_API_BASE_URL}${GEMINI_MODEL_NAME_FALLBACK}:generateContent?key=${key}`;
                 const response = await fetch(testApiUrl, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
@@ -589,9 +651,12 @@
                     localStorage.setItem(GEMINI_API_KEY_STORAGE_KEY, key);
                     geminiApiKey = key;
                     isGeminiKeyValid = true; 
-                    showStatusInModal('API Key is valid and saved successfully!', 'success');
-                    loadGeminiApiKeyFromStorage(); 
-                    setTimeout(() => closeApiKeyModal(), 1500); 
+                    // Don't show modal success message yet, fetchAndSelectPreviewModel will update it or show its own.
+                    // showStatusInModal('API Key is valid and saved successfully!', 'success'); 
+                    await fetchAndSelectPreviewModel(geminiApiKey); // Fetch models after successful save
+                    loadGeminiApiKeyFromStorage(); // Update home button text
+                    // Only close modal if model fetching also went okay (or user can see status from fetch)
+                    // setTimeout(() => closeApiKeyModal(), 1500); 
                     return true;
                 } else {
                     const errorData = await response.json();
@@ -599,6 +664,8 @@
                     showStatusInModal(errorMsg, 'danger');
                     logError("Gemini Key Validation", errorMsg);
                     isGeminiKeyValid = false; 
+                    currentGeminiModelName = GEMINI_MODEL_NAME_FALLBACK; // Reset on key validation failure
+                    updateCurrentModelDisplay(currentGeminiModelName);
                     return false;
                 }
             } catch (error) {
@@ -606,23 +673,27 @@
                 showStatusInModal(errorMsg, 'danger');
                 logError("Gemini Key Validation Error", error);
                 isGeminiKeyValid = false; 
+                currentGeminiModelName = GEMINI_MODEL_NAME_FALLBACK; // Reset on error
+                updateCurrentModelDisplay(currentGeminiModelName);
                 return false;
             } finally {
                 saveGeminiApiKeyButtonModal.classList.remove('is-loading');
             }
         }
-        function clearGeminiApiKey() { 
+        function clearGeminiApiKey() { /* ... same ... */ 
             localStorage.removeItem(GEMINI_API_KEY_STORAGE_KEY);
             geminiApiKey = null;
             isGeminiKeyValid = false; 
             geminiApiKeyInputModal.value = '';
             showStatusInModal('Stored API Key cleared.', 'info');
-            loadGeminiApiKeyFromStorage();
+            loadGeminiApiKeyFromStorage(); // This will reset model to fallback
         }
-        function openApiKeyModal() { 
-             apiKeyModal.classList.add('is-active'); hideStatusInModal(); 
+        function openApiKeyModal() { /* ... same ... */ 
+             apiKeyModal.classList.add('is-active'); 
+             hideStatusInModal(); 
+             updateCurrentModelDisplay(currentGeminiModelName); // Show current model when modal opens
         }
-        function closeApiKeyModal() { 
+        function closeApiKeyModal() { /* ... same ... */ 
             apiKeyModal.classList.remove('is-active'); 
         }
         apiKeyButtonHome.addEventListener('click', openApiKeyModal);
@@ -632,7 +703,7 @@
         document.getElementById('cancel-api-modal-button').addEventListener('click', closeApiKeyModal);
         apiKeyModal.querySelector('.modal-background').addEventListener('click', closeApiKeyModal);
 
-        function constructSystemPrompt(details, role, mostSol, leastSol, compSol) { 
+        function constructSystemPrompt(details, role, mostSol, leastSol, compSol) { /* ... same ... */ 
             return `You are acting as '${role}' in a simulated difficult conversation. The user is practicing how to navigate this situation.
 The context of the difficult conversation is:
 ${details}
@@ -650,7 +721,7 @@ Your task is to:
 Your persona as '${role}' should be consistent throughout the simulation.
 Begin by presenting Option A and Option B.`;
         }
-        function addMessageToChatUI(text, role, isError = false) { 
+        function addMessageToChatUI(text, role, isError = false) { /* ... same ... */ 
             const container = document.createElement("div");
             container.classList.add("message-container", role);
             if (isError) container.classList.add("error");
@@ -663,7 +734,7 @@ Begin by presenting Option A and Option B.`;
             chatBox.appendChild(container);
             chatBox.scrollTop = chatBox.scrollHeight;
         }
-        function updateLastBotMessageInUI(content) { 
+        function updateLastBotMessageInUI(content) { /* ... same ... */ 
             const lastBotMessageContainer = chatBox.querySelector('.message-container.assistant:last-child .message-bubble');
             if (lastBotMessageContainer) {
                 let formattedContent = content.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
@@ -674,7 +745,7 @@ Begin by presenting Option A and Option B.`;
                 addMessageToChatUI(content, "assistant"); 
             }
         }
-        async function sendInitialBotMessage() { 
+        async function sendInitialBotMessage() { /* ... uses currentGeminiModelName ... */ 
              if (!isGeminiKeyValid) {
                 addMessageToChatUI("API Key is not set or invalid. Please set it up on the home page or via the navbar menu.", "assistant", true);
                 logError("Chat Init", "Gemini API key not valid.");
@@ -689,7 +760,7 @@ Begin by presenting Option A and Option B.`;
             userInputChat.placeholder = "AI is preparing initial options...";
             chatBox.innerHTML = ''; 
             geminiApiHistory = []; 
-            addMessageToChatUI("▍", "assistant"); 
+            addMessageToChatUI(`▍ (Using model: ${currentGeminiModelName})`, "assistant"); 
             let accumulatedMessage = "";
             let animationFrameId;
             let cursorVisible = true;
@@ -710,7 +781,8 @@ Begin by presenting Option A and Option B.`;
                     systemInstruction: { parts: [{ text: currentSystemPrompt }] },
                     generationConfig: { temperature: 0.7, topP: 0.95, maxOutputTokens: 2048 }
                 };
-                const response = await fetch(`${GEMINI_API_BASE_URL}${GEMINI_MODEL_NAME}:generateContent?key=${geminiApiKey}`, {
+                const apiUrl = `${GEMINI_API_BASE_URL}${currentGeminiModelName}:generateContent?key=${geminiApiKey}`;
+                const response = await fetch(apiUrl, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify(requestBody)
@@ -743,7 +815,7 @@ Begin by presenting Option A and Option B.`;
                 userInputChat.placeholder = "Error during initialization.";
             }
         }
-        async function handleSendMessageToGemini() { 
+        async function handleSendMessageToGemini() { /* ... uses currentGeminiModelName ... */ 
             const inputText = userInputChat.value.trim();
             if (inputText.length === 0 || !isGeminiKeyValid || sendButtonChat.classList.contains('is-loading')) return;
             addMessageToChatUI(inputText, "user");
@@ -774,7 +846,8 @@ Begin by presenting Option A and Option B.`;
                     systemInstruction: { parts: [{ text: currentSystemPrompt }] }, 
                     generationConfig: { temperature: 0.7, topP: 0.95, maxOutputTokens: 2048 }
                 };
-                const response = await fetch(`${GEMINI_API_BASE_URL}${GEMINI_MODEL_NAME}:generateContent?key=${geminiApiKey}`, {
+                const apiUrl = `${GEMINI_API_BASE_URL}${currentGeminiModelName}:generateContent?key=${geminiApiKey}`;
+                const response = await fetch(apiUrl, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify(requestBody)
@@ -817,7 +890,7 @@ Begin by presenting Option A and Option B.`;
             }
         });
 
-        proceedToChatButton.addEventListener('click', () => { 
+        proceedToChatButton.addEventListener('click', () => { /* ... same ... */ 
             const conflictDetails = conflictDetailsInput.value.trim();
             const llmCharacterRole = llmCharacterRoleInput.value.trim();
             const mostDesiredSol = mostDesiredSolInput.value.trim();
@@ -839,7 +912,7 @@ Begin by presenting Option A and Option B.`;
             sendInitialBotMessage();
         });
 
-        function initializeApp() {
+        function initializeApp() { /* ... same, calls loadGeminiApiKeyFromStorage which now also calls fetchAndSelectPreviewModel ... */ 
             PWA_SETUP.init(); 
             pages.splash.classList.add('is-active');
             Object.values(pages).forEach(page => {
@@ -850,7 +923,7 @@ Begin by presenting Option A and Option B.`;
 
             setTimeout(() => {
                 navigateTo('home'); 
-                loadGeminiApiKeyFromStorage();
+                loadGeminiApiKeyFromStorage(); // This will now trigger model fetching if key exists
             }, 2000); 
         }
 
