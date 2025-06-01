@@ -6,7 +6,7 @@
     <title>Difficult Conversations Simulator</title>
 
     <meta name="description" content="Practice difficult conversations with an AI simulator.">
-    <meta name="theme-color" content="#363636"> <!-- Dark theme color -->
+    <meta name="theme-color" content="#363636">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="apple-mobile-web-app-title" content="DiffConvSim">
@@ -14,19 +14,15 @@
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bulma@1.0.4/css/bulma.min.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
 
-
     <style>
-        /* Global Styles & Dark Mode defaults from Bulma */
-        html[data-theme="dark"] {
-            /* Bulma 1.0 uses CSS variables for theming. This attribute activates its dark mode. */
-        }
+        html[data-theme="dark"] {}
         body {
             transition: background-color 0.3s ease, color 0.3s ease;
-            overflow-x: hidden; /* Prevent horizontal scroll during transitions */
-            padding-top: 3.25rem; /* Height of Bulma navbar */
+            overflow-x: hidden;
+            padding-top: 3.25rem;
             min-height: 100vh;
-            display: flex; /* Added to ensure pages can fill height correctly */
-            flex-direction: column; /* Added */
+            display: flex;
+            flex-direction: column;
         }
 
         .page {
@@ -34,31 +30,28 @@
             opacity: 0;
             transition: opacity 0.4s ease-in-out;
             width: 100%;
-            /* min-height: calc(100vh - 3.25rem); Removed, let flex grow handle it */
             box-sizing: border-box;
-            flex-grow: 1; /* Added to make page content fill available space */
+            flex-grow: 1;
         }
         .page.is-active {
-            display: flex; /* Using flex for centering content or structuring */
+            display: flex;
             flex-direction: column;
             opacity: 1;
         }
 
-        /* Splash Screen */
         #splash-screen {
             justify-content: center;
             align-items: center;
             text-align: center;
-            background-color: hsl(0, 0%, 7%); /* Very dark for splash */
+            background-color: hsl(0, 0%, 7%);
             color: hsl(0, 0%, 96%);
-            position: fixed; /* Keep splash full screen */
+            position: fixed;
             top: 0;
             left: 0;
             right: 0;
             bottom: 0;
             z-index: 1000;
-            padding-top: 0; /* Override body padding-top for full screen */
-            /* min-height: 100vh; Not needed with position:fixed and top/bottom 0 */
+            padding-top: 0;
         }
         #splash-screen .title {
             font-size: 2.5rem;
@@ -70,70 +63,77 @@
             100% { opacity: 1; transform: scale(1); }
         }
 
-        /* Navbar */
-        #app-navbar.is-fixed-top { /* Target the ID for specificity */
+        #app-navbar.is-fixed-top {
             box-shadow: 0 2px 4px rgba(0,0,0,0.2);
-            position: fixed; /* Ensure it stays fixed */
+            position: fixed;
             top: 0;
             left: 0;
             right: 0;
-            z-index: 900; /* Below splash, above content */
+            z-index: 900;
         }
-        .navbar-brand .navbar-item img {
-            max-height: 2.5rem; /* Adjust logo size */
-        }
-        .app-title-navbar {
-            font-weight: bold;
+        /* Hide the app title/logo in the navbar */
+        #app-navbar .navbar-brand > .navbar-item.app-brand-link {
+            display: none !important;
         }
 
-        /* Home Page Specifics */
-        #home-page { /* page ID for specificity */
-            padding-top: 1.5rem; /* Space below fixed navbar */
-            align-items: center; /* Center the content container */
+        #home-page {
+            padding-top: 1.5rem;
+            align-items: center;
         }
         #home-page .section {
             width: 100%;
-            max-width: 700px; /* Content max width */
-            /* margin: 0 auto;  No longer needed if #home-page uses align-items: center */
+            max-width: 700px;
             padding: 1.5rem;
         }
-         #home-page .button-container {
+        #home-page .button-container {
             margin-top: 1.5rem;
             text-align: center;
         }
 
-        /* API Key Modal */
-        .modal-card-body .content ul {
-            margin-left: 1em; /* Indent instructions list */
+        /* API Key Modal fixes */
+        #api-key-modal .modal-card {
+            max-width: 90%;
+            width: 500px;
         }
-        .api-key-instructions {
-            font-size: 0.9rem;
+        #api-key-modal .modal-card-body .content,
+        #api-key-modal .modal-card-body .api-key-instructions {
+            word-break: break-word;
         }
-        #geminiApiKeyStatusModal { margin-top: 10px; }
+        #api-key-modal .modal-card-foot {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: flex-end;
+            gap: 0.5rem;
+        }
+        #api-key-modal .modal-card-foot button {
+           margin-bottom: 0.5rem;
+        }
+        #api-key-modal .modal-card-foot #clearGeminiApiKeyButtonModal {
+            margin-right: auto;
+        }
+        #geminiApiKeyStatusModal .message-body {
+            word-break: break-word;
+        }
 
-
-        /* Chat Page Specifics */
-        #chat-page { /* page ID for specificity */
-             padding-top: 1.5rem; /* Space below fixed navbar */
-             align-items: center; /* Center chat page content */
+        #chat-page {
+             padding-top: 1.5rem;
+             align-items: center;
         }
         #chat-page-content {
             display: flex;
             flex-direction: column;
-            /* height: calc(100vh - 3.25rem - 1.5rem);  Let flex-grow handle height */
             width: 100%;
-            max-width: 800px; /* Chat content max width */
-            /* margin: 0 auto; No longer needed */
-            flex-grow: 1; /* Make chat content take available vertical space */
+            max-width: 800px;
+            flex-grow: 1;
         }
         #chat-box {
             flex-grow: 1;
             overflow-y: auto;
             padding: 1rem;
-            border: 1px solid hsl(0, 0%, 29%); /* Darker border */
+            border: 1px solid hsl(0, 0%, 29%);
             border-radius: 6px;
             margin-bottom: 1rem;
-            background-color: hsl(0, 0%, 14%); /* Slightly lighter than body for contrast */
+            background-color: hsl(0, 0%, 14%);
         }
         .message-container { margin-bottom: 10px; display: flex; animation: slideInUp 0.3s ease-out; }
         @keyframes slideInUp {
@@ -152,13 +152,12 @@
             pointer-events: none;
         }
 
-        /* Status & Error Log */
         #mainStatusFooter {
             font-size: 0.8rem;
             padding: 0.5rem 1rem;
             background-color: hsl(0, 0%, 21%);
             text-align: center;
-            position: fixed; /* Optional: fix status to bottom */
+            position: fixed;
             bottom: 0;
             left: 0;
             right: 0;
@@ -167,7 +166,7 @@
         #errorLogContainer {
             margin: 1rem;
             font-size: 0.8em;
-            padding-bottom: 2rem; /* Space for fixed footer if used */
+            padding-bottom: 2rem;
         }
         #errorLog {
             max-height: 100px;
@@ -181,33 +180,19 @@
         .log-entry { margin-bottom: 5px; color: hsl(348, 100%, 71%); }
         .log-entry pre { color: hsl(348, 100%, 81%); white-space: pre-wrap; word-break: break-all;}
 
-        /* Helper for hidden */
         .is-hidden-completely { display: none !important; }
-        .is-visually-hidden {
-            position: absolute;
-            width: 1px;
-            height: 1px;
-            padding: 0;
-            margin: -1px;
-            overflow: hidden;
-            clip: rect(0, 0, 0, 0);
-            white-space: nowrap;
-            border: 0;
-        }
     </style>
 </head>
 <body>
 
-    <!-- Splash Screen -->
     <div id="splash-screen" class="page is-active">
         <h1 class="title">Difficult Conversations Simulator</h1>
     </div>
 
-    <!-- Navigation Bar (Common for Home and Chat) -->
     <nav id="app-navbar" class="navbar is-fixed-top is-dark is-hidden-completely" role="navigation" aria-label="main navigation">
         <div class="container">
             <div class="navbar-brand">
-                <a class="navbar-item" href="#">
+                <a class="navbar-item app-brand-link" href="#">
                     <span class="icon is-medium mr-2"><i class="fas fa-comments"></i></span>
                     <span class="app-title-navbar">DiffConvSim</span>
                 </a>
@@ -287,9 +272,7 @@
     <!-- Chat Page -->
     <div id="chat-page" class="page">
         <div id="chat-page-content">
-            <div id="chat-box">
-                <!-- Messages will be appended here -->
-            </div>
+            <div id="chat-box"></div>
             <div id="input-area" class="field has-addons">
                 <div class="control is-expanded">
                     <input class="input" type="text" id="user-input-chat" placeholder="Type your message..." disabled>
@@ -334,39 +317,35 @@
                     <div class="message-body"></div>
                 </div>
             </section>
-            <footer class="modal-card-foot is-justify-content-flex-end">
-                <button class="button is-success" id="saveGeminiApiKeyButtonModal">Save and Test Key</button>
+            <footer class="modal-card-foot">
+                <button class="button is-danger is-outlined" id="clearGeminiApiKeyButtonModal">Clear Stored Key</button>
+                <button class="button is-success" id="saveGeminiApiKeyButtonModal">Save & Test</button>
                 <button class="button" id="cancel-api-modal-button">Cancel</button>
-                <button class="button is-danger is-outlined ml-auto" id="clearGeminiApiKeyButtonModal">Clear Stored Key</button>
             </footer>
         </div>
     </div>
 
-    <!-- Footer for Status Messages (optional, can be removed or integrated) -->
     <footer id="mainStatusFooter" class="is-hidden-completely">Current Status...</footer>
     <div id="errorLogContainer" class="is-hidden-completely">
         <p class="has-text-weight-bold">Error Log:</p>
         <div id="errorLog"></div>
     </div>
 
-
     <script type="module">
-        // --- PWA Setup ---
-        // ... (PWA_SETUP object remains the same as your previous correct version)
         const PWA_SETUP = {
-            SW_VERSION_REFERENCE: 'v1.0.5', // Increment if sw.js or index.html changes
+            SW_VERSION_REFERENCE: 'v1.0.6',
             APP_NAME: "Difficult Conversations Simulator",
             SHORT_NAME: "DiffConvSim",
             DESCRIPTION: "Practice difficult conversations with an AI simulator.",
             THEME_COLOR: "#363636",
-            BACKGROUND_COLOR: "#1a1a1a", // Dark background
+            BACKGROUND_COLOR: "#1a1a1a", 
             START_URL: "./index.html",
 
             createSvgDataUrl: function(svgString) {
                 return `data:image/svg+xml;base64,${btoa(unescape(encodeURIComponent(svgString)))}`;
             },
             generateIcons: function() {
-                const iconSvgContent = `<path fill="currentColor" d="M20 2H4c-1.1 0-2 .9-2 2v18l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zm-2 12H6v-2h12v2zm0-3H6V9h12v2zm0-3H6V6h12v2z"/>`; // Simple chat bubble
+                const iconSvgContent = `<path fill="currentColor" d="M20 2H4c-1.1 0-2 .9-2 2v18l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zm-2 12H6v-2h12v2zm0-3H6V9h12v2zm0-3H6V6h12v2z"/>`;
                 const iconSvgTemplate = (size, bgColor = this.THEME_COLOR, fgColor = "white") => `
                     <svg xmlns="http://www.w3.org/2000/svg" width="${size}" height="${size}" viewBox="0 0 24 24">
                         <rect width="24" height="24" fill="${bgColor}"/>
@@ -411,9 +390,7 @@
             }
         };
 
-
-        // DOM Elements
-        const appNavbar = document.getElementById('app-navbar'); // Added for showing/hiding
+        const appNavbar = document.getElementById('app-navbar');
         const pages = {
             splash: document.getElementById('splash-screen'),
             home: document.getElementById('home-page'),
@@ -440,27 +417,25 @@
         const errorLogDiv = document.getElementById('errorLog');
         const navHomeButton = document.getElementById('nav-home-button');
         const navChatButton = document.getElementById('nav-chat-button');
-        const navApiKeyStatus = document.getElementById('navApiKeyStatus'); // For navbar API status
+        const navApiKeyStatus = document.getElementById('navApiKeyStatus'); 
         const navbarBurger = document.querySelector('.navbar-burger');
         const navbarMenu = document.getElementById('navbarMenu');
+        const appBrandLink = document.querySelector('.app-brand-link');
 
-
-        // --- State Variables ---
         let currentPageId = 'splash';
         let geminiApiKey = null;
         let isGeminiKeyValid = false;
         let geminiApiHistory = [];
         let currentSystemPrompt = "";
 
-        const GEMINI_API_KEY_STORAGE_KEY = 'geminiApiKey_diff_conv_sim_v2'; // Changed key slightly to avoid old data conflicts
+        const GEMINI_API_KEY_STORAGE_KEY = 'geminiApiKey_diff_conv_sim_v2';
         const GEMINI_MODEL_NAME = "gemini-1.5-flash-latest"; 
         const GEMINI_API_BASE_URL = 'https://generativelanguage.googleapis.com/v1beta/models/';
 
-        // --- Utility Functions ---
-        function logError(errorSource, error) { /* ... (same as before) ... */ 
+        function logError(errorSource, error) { 
             console.error(errorSource, error);
             const errorLogContainer = document.getElementById('errorLogContainer');
-            errorLogContainer.classList.remove('is-hidden-completely');
+            if(errorLogContainer) errorLogContainer.classList.remove('is-hidden-completely');
             const timestamp = new Date().toLocaleTimeString();
             const errorEntry = document.createElement('div');
             errorEntry.classList.add('log-entry');
@@ -471,20 +446,20 @@
                 stackTrace.textContent = error.stack;
                 errorEntry.appendChild(stackTrace);
             }
-            errorLogDiv.appendChild(errorEntry);
-            errorLogDiv.scrollTop = errorLogDiv.scrollHeight;
+            if(errorLogDiv) {
+                 errorLogDiv.appendChild(errorEntry);
+                 errorLogDiv.scrollTop = errorLogDiv.scrollHeight;
+            }
         }
-
-        function showStatusInModal(message, type = 'info') { /* ... (same as before) ... */ 
+        function showStatusInModal(message, type = 'info') { 
             geminiApiKeyStatusModalDiv.classList.remove('is-hidden-completely', 'is-info', 'is-success', 'is-warning', 'is-danger');
             geminiApiKeyStatusModalDiv.classList.add(`is-${type}`);
             geminiApiKeyStatusModalDiv.querySelector('.message-body').textContent = message;
         }
-        function hideStatusInModal() { /* ... (same as before) ... */ 
+        function hideStatusInModal() { 
             geminiApiKeyStatusModalDiv.classList.add('is-hidden-completely');
         }
-
-        // --- Navigation ---
+        
         function navigateTo(pageId) {
             console.log(`Navigating to: ${pageId}`);
             if (pages[currentPageId]) {
@@ -498,11 +473,7 @@
 
                 navHomeButton.classList.toggle('is-active', pageId === 'home');
                 navChatButton.classList.toggle('is-active', pageId === 'chat');
-                
-                // Show chat nav only if on chat page or if a chat history exists (implies a session started)
                 navChatButton.classList.toggle('is-hidden-completely', pageId !== 'chat' && geminiApiHistory.length === 0);
-                
-                // Show navbar unless on splash
                 appNavbar.classList.toggle('is-hidden-completely', pageId === 'splash');
 
             } else {
@@ -513,7 +484,6 @@
         navHomeButton.addEventListener('click', (e) => { e.preventDefault(); navigateTo('home'); });
         navChatButton.addEventListener('click', (e) => { e.preventDefault(); navigateTo('chat'); });
         
-        // Navbar Burger Toggle
         if (navbarBurger) {
             navbarBurger.addEventListener('click', () => {
                 navbarBurger.classList.toggle('is-active');
@@ -521,8 +491,6 @@
             });
         }
 
-
-        // --- API Key Management ---
         function loadGeminiApiKeyFromStorage() {
             const storedKey = localStorage.getItem(GEMINI_API_KEY_STORAGE_KEY);
             if (storedKey) {
@@ -532,7 +500,7 @@
                 apiKeyButtonHome.classList.add('is-success');
                 apiKeyButtonHome.innerHTML = '<span class="icon"><i class="fas fa-check-circle"></i></span><span>API Key Set</span>';
                 navApiKeyStatus.textContent = "API Key: Set";
-                isGeminiKeyValid = true; // Assume valid if stored. `testAndSave` confirms.
+                isGeminiKeyValid = true;
                 return true;
             } else {
                 apiKeyButtonHome.classList.add('is-danger');
@@ -543,18 +511,15 @@
                 return false;
             }
         }
-
-        async function testAndSaveGeminiApiKey() { /* ... (same as before, ensure isGeminiKeyValid is set) ... */ 
+        async function testAndSaveGeminiApiKey() { 
             const key = geminiApiKeyInputModal.value.trim();
             if (!key) {
                 showStatusInModal('API Key cannot be empty.', 'warning');
-                isGeminiKeyValid = false; // Explicitly set on failure
+                isGeminiKeyValid = false; 
                 return false;
             }
-
             showStatusInModal('Validating API Key...', 'info');
             saveGeminiApiKeyButtonModal.classList.add('is-loading');
-
             try {
                 const testApiUrl = `${GEMINI_API_BASE_URL}${GEMINI_MODEL_NAME}:generateContent?key=${key}`;
                 const response = await fetch(testApiUrl, {
@@ -562,11 +527,10 @@
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ "contents": [{"parts": [{"text": "Hi"}]}] })
                 });
-
                 if (response.ok) {
                     localStorage.setItem(GEMINI_API_KEY_STORAGE_KEY, key);
                     geminiApiKey = key;
-                    isGeminiKeyValid = true; // Set on success
+                    isGeminiKeyValid = true; 
                     showStatusInModal('API Key is valid and saved successfully!', 'success');
                     loadGeminiApiKeyFromStorage(); 
                     setTimeout(() => closeApiKeyModal(), 1500); 
@@ -576,34 +540,31 @@
                     const errorMsg = `API Key validation failed: ${errorData.error?.message || response.statusText}. Please check your key.`;
                     showStatusInModal(errorMsg, 'danger');
                     logError("Gemini Key Validation", errorMsg);
-                    isGeminiKeyValid = false; // Set on failure
+                    isGeminiKeyValid = false; 
                     return false;
                 }
             } catch (error) {
                 const errorMsg = `Error during API key validation: ${error.message}`;
                 showStatusInModal(errorMsg, 'danger');
                 logError("Gemini Key Validation Error", error);
-                isGeminiKeyValid = false; // Set on failure
+                isGeminiKeyValid = false; 
                 return false;
             } finally {
                 saveGeminiApiKeyButtonModal.classList.remove('is-loading');
             }
         }
-
-        function clearGeminiApiKey() { /* ... (same as before, ensure isGeminiKeyValid is set) ... */ 
+        function clearGeminiApiKey() { 
             localStorage.removeItem(GEMINI_API_KEY_STORAGE_KEY);
             geminiApiKey = null;
-            isGeminiKeyValid = false; // Set on clear
+            isGeminiKeyValid = false; 
             geminiApiKeyInputModal.value = '';
             showStatusInModal('Stored API Key cleared.', 'info');
             loadGeminiApiKeyFromStorage();
         }
-
-        // Modal Open/Close
-        function openApiKeyModal() { /* ... (same as before) ... */ 
+        function openApiKeyModal() { 
              apiKeyModal.classList.add('is-active'); hideStatusInModal(); 
         }
-        function closeApiKeyModal() { /* ... (same as before) ... */ 
+        function closeApiKeyModal() { 
             apiKeyModal.classList.remove('is-active'); 
         }
         apiKeyButtonHome.addEventListener('click', openApiKeyModal);
@@ -613,9 +574,7 @@
         document.getElementById('cancel-api-modal-button').addEventListener('click', closeApiKeyModal);
         apiKeyModal.querySelector('.modal-background').addEventListener('click', closeApiKeyModal);
 
-
-        // --- Chat Logic ---
-        function constructSystemPrompt(details, role, mostSol, leastSol, compSol) { /* ... (same as before) ... */ 
+        function constructSystemPrompt(details, role, mostSol, leastSol, compSol) { 
             return `You are acting as '${role}' in a simulated difficult conversation. The user is practicing how to navigate this situation.
 The context of the difficult conversation is:
 ${details}
@@ -633,37 +592,31 @@ Your task is to:
 Your persona as '${role}' should be consistent throughout the simulation.
 Begin by presenting Option A and Option B.`;
         }
-
-        function addMessageToChatUI(text, role, isError = false) { /* ... (same as before) ... */ 
+        function addMessageToChatUI(text, role, isError = false) { 
             const container = document.createElement("div");
             container.classList.add("message-container", role);
             if (isError) container.classList.add("error");
-
             const bubble = document.createElement("div");
             bubble.classList.add("message-bubble");
-            
             let content = text.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
             content = content.replace(/\n/g, '<br>');
             bubble.innerHTML = content;
-
             container.appendChild(bubble);
             chatBox.appendChild(container);
             chatBox.scrollTop = chatBox.scrollHeight;
         }
-        
-        function updateLastBotMessageInUI(content) { /* ... (same as before) ... */ 
+        function updateLastBotMessageInUI(content) { 
             const lastBotMessageContainer = chatBox.querySelector('.message-container.assistant:last-child .message-bubble');
             if (lastBotMessageContainer) {
                 let formattedContent = content.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
                 formattedContent = formattedContent.replace(/\n/g, '<br>');
                 lastBotMessageContainer.innerHTML = formattedContent;
                 chatBox.scrollTop = chatBox.scrollHeight;
-            } else { // If no last bot message (e.g. first message is the typing indicator)
-                addMessageToChatUI(content, "assistant"); // This should handle the "▍" case
+            } else { 
+                addMessageToChatUI(content, "assistant"); 
             }
         }
-
-        async function sendInitialBotMessage() { /* ... (same as before, ensure isGeminiKeyValid check) ... */ 
+        async function sendInitialBotMessage() { 
              if (!isGeminiKeyValid) {
                 addMessageToChatUI("API Key is not set or invalid. Please set it up on the home page.", "assistant", true);
                 logError("Chat Init", "Gemini API key not valid.");
@@ -672,16 +625,13 @@ Begin by presenting Option A and Option B.`;
                 userInputChat.placeholder = "API Key Error. Please fix.";
                 return;
             }
-
             sendButtonChat.disabled = true;
             sendButtonChat.classList.add('is-loading');
             userInputChat.disabled = true;
             userInputChat.placeholder = "AI is preparing initial options...";
             chatBox.innerHTML = ''; 
             geminiApiHistory = []; 
-
             addMessageToChatUI("▍", "assistant"); 
-
             let accumulatedMessage = "";
             let animationFrameId;
             let cursorVisible = true;
@@ -696,23 +646,19 @@ Begin by presenting Option A and Option B.`;
                 animationFrameId = requestAnimationFrame(typingIndicator);
             };
             animationFrameId = requestAnimationFrame(typingIndicator);
-
             try {
                 const requestBody = {
                     contents: [{ role: "user", parts: [{ text: "Let's begin the simulation. Please provide the initial options as per your instructions." }] }],
                     systemInstruction: { parts: [{ text: currentSystemPrompt }] },
                     generationConfig: { temperature: 0.7, topP: 0.95, maxOutputTokens: 2048 }
                 };
-                
                 const response = await fetch(`${GEMINI_API_BASE_URL}${GEMINI_MODEL_NAME}:generateContent?key=${geminiApiKey}`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify(requestBody)
                 });
-
                 sendButtonChat.classList.remove('is-loading'); 
                 if (animationFrameId) cancelAnimationFrame(animationFrameId); 
-
                 if (!response.ok) {
                     const errorData = await response.json();
                     throw new Error(`Gemini API Error (Initial): ${errorData.error?.message || response.statusText}`);
@@ -734,17 +680,14 @@ Begin by presenting Option A and Option B.`;
                 sendButtonChat.classList.remove('is-loading');
                 logError("Gemini InitialBotMsg", err);
                 updateLastBotMessageInUI(`Error getting initial advice: ${err.message}`);
-                // addMessageToChatUI(`Error: ${err.message}`, "assistant", true); // This might create a duplicate error message bubble
                 userInputChat.disabled = true;
                 sendButtonChat.disabled = true;
                 userInputChat.placeholder = "Error during initialization.";
             }
         }
-
-        async function handleSendMessageToGemini() { /* ... (same as before, ensure isGeminiKeyValid check) ... */ 
+        async function handleSendMessageToGemini() { 
             const inputText = userInputChat.value.trim();
             if (inputText.length === 0 || !isGeminiKeyValid || sendButtonChat.classList.contains('is-loading')) return;
-
             addMessageToChatUI(inputText, "user");
             geminiApiHistory.push({ role: "user", parts: [{ text: inputText }] });
             userInputChat.value = "";
@@ -752,9 +695,7 @@ Begin by presenting Option A and Option B.`;
             sendButtonChat.classList.add('is-loading');
             userInputChat.disabled = true;
             userInputChat.placeholder = "AI is thinking...";
-
             addMessageToChatUI("▍", "assistant"); 
-
             let accumulatedMessage = "";
             let animationFrameId;
             let cursorVisible = true;
@@ -769,23 +710,19 @@ Begin by presenting Option A and Option B.`;
                 animationFrameId = requestAnimationFrame(typingIndicator);
             };
             animationFrameId = requestAnimationFrame(typingIndicator);
-
             try {
                 const requestBody = {
                     contents: geminiApiHistory, 
                     systemInstruction: { parts: [{ text: currentSystemPrompt }] }, 
                     generationConfig: { temperature: 0.7, topP: 0.95, maxOutputTokens: 2048 }
                 };
-
                 const response = await fetch(`${GEMINI_API_BASE_URL}${GEMINI_MODEL_NAME}:generateContent?key=${geminiApiKey}`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify(requestBody)
                 });
-                
                 sendButtonChat.classList.remove('is-loading');
                 if (animationFrameId) cancelAnimationFrame(animationFrameId);
-
                 if (!response.ok) {
                     const errorData = await response.json();
                     throw new Error(`Gemini API Error: ${errorData.error?.message || response.statusText}`);
@@ -807,12 +744,11 @@ Begin by presenting Option A and Option B.`;
                 sendButtonChat.classList.remove('is-loading');
                 logError("Gemini SendMessage", err);
                 updateLastBotMessageInUI(`Error generating response: ${err.message}`);
-                // addMessageToChatUI(`Error: ${err.message}`, "assistant", true); // May duplicate
             } finally {
                 userInputChat.disabled = false;
                 sendButtonChat.disabled = false;
                 userInputChat.placeholder = "Type your response...";
-                if (currentPageId === 'chat') userInputChat.focus(); // Only focus if on chat page
+                if (currentPageId === 'chat') userInputChat.focus();
             }
         }
         sendButtonChat.addEventListener("click", handleSendMessageToGemini);
@@ -823,25 +759,21 @@ Begin by presenting Option A and Option B.`;
             }
         });
 
-
-        // --- Home Page Logic ---
-        proceedToChatButton.addEventListener('click', () => { /* ... (same as before, check isGeminiKeyValid) ... */ 
+        proceedToChatButton.addEventListener('click', () => { 
             const conflictDetails = conflictDetailsInput.value.trim();
             const llmCharacterRole = llmCharacterRoleInput.value.trim();
             const mostDesiredSol = mostDesiredSolInput.value.trim();
             const leastDesiredSol = leastDesiredSolInput.value.trim();
             const compromisedSol = compromisedSolInput.value.trim();
-
             if (!conflictDetails || !llmCharacterRole || !mostDesiredSol || !leastDesiredSol) {
                 alert("Please fill in all required fields: Description, AI Role, Most and Least Desired Outcomes.");
                 return;
             }
-            if (!isGeminiKeyValid) { // Crucial check
+            if (!isGeminiKeyValid) {
                  openApiKeyModal();
                  showStatusInModal("Please set and validate your Gemini API Key before proceeding.", "warning");
                 return;
             }
-
             currentSystemPrompt = constructSystemPrompt(
                 conflictDetails, llmCharacterRole, mostDesiredSol, leastDesiredSol, compromisedSol
             );
@@ -849,26 +781,22 @@ Begin by presenting Option A and Option B.`;
             sendInitialBotMessage();
         });
 
-
-        // --- Initial Application Load ---
         function initializeApp() {
             PWA_SETUP.init(); 
-
-            // Ensure splash screen is visible initially, then transition
-            pages.splash.classList.add('is-active'); // Explicitly set splash active
+            pages.splash.classList.add('is-active');
             Object.values(pages).forEach(page => {
                 if (page.id !== 'splash-screen') page.classList.remove('is-active');
             });
-            appNavbar.classList.add('is-hidden-completely'); // Hide navbar during splash
+            appNavbar.classList.add('is-hidden-completely'); 
+            if(appBrandLink) appBrandLink.classList.add('is-hidden-completely');
 
             setTimeout(() => {
-                navigateTo('home'); // This will hide splash and show home + navbar
+                navigateTo('home'); 
                 loadGeminiApiKeyFromStorage();
             }, 2000); 
         }
 
         document.addEventListener('DOMContentLoaded', initializeApp);
-
     </script>
 </body>
 </html>
