@@ -1,9 +1,25 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <title>Difficult Conversations Simulator</title>
+
+    <meta name="description" content="Practice difficult conversations with an AI simulator.">
+    <meta name="theme-color" content="#363636">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="DiffConvSim">
+
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bulma@1.0.4/css/bulma.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+
+    <style>
         html[data-theme="dark"] {}
         body {
             transition: background-color 0.3s ease, color 0.3s ease;
             overflow-x: hidden;
-            /* Dynamically adjust body's top padding to account for navbar's height AND top safe area inset */
-            padding-top: calc(3.25rem + env(safe-area-inset-top, 0px)); /* 3.25rem is Bulma's default navbar height */
+            padding-top: calc(3.25rem + env(safe-area-inset-top, 0px)); 
             min-height: 100vh;
             display: flex;
             flex-direction: column;
@@ -62,16 +78,12 @@
             left: 0;
             right: 0;
             z-index: 900;
-            width: 100%; /* Ensure it spans full width before padding */
-            box-sizing: border-box; /* Padding should be included within the 100% width */
-
-            /* Apply safe area padding to the navbar element itself */
-            padding-top: env(safe-area-inset-top, 0px);    /* For top notch/status bar */
-            padding-left: env(safe-area-inset-left, 0px);  /* For side notches/insets */
-            padding-right: env(safe-area-inset-right, 0px); /* For side notches/insets */
-            /* padding-bottom: env(safe-area-inset-bottom, 0px); /* Usually not needed for a top navbar */
+            width: 100%; 
+            box-sizing: border-box; 
+            padding-top: env(safe-area-inset-top, 0px);    
+            padding-left: env(safe-area-inset-left, 0px);  
+            padding-right: env(safe-area-inset-right, 0px); 
         }
-        /* The .container within the navbar will then naturally fit within these padded bounds */
 
         #app-navbar .navbar-brand > .navbar-item.app-brand-link {
             display: none !important;
@@ -87,8 +99,8 @@
             color: hsl(141, 53%, 53%) !important;
         }
 
-        #home-page, #about-page {
-            padding-top: 1.5rem; /* Existing padding to space content from navbar */
+        #home-page, #about-page { 
+            padding-top: 1.5rem;
             align-items: center;
         }
         #home-page .section, #about-page .section {
@@ -126,7 +138,7 @@
         }
 
         #chat-page {
-             padding-top: 1.5rem; /* Existing padding to space content from navbar */
+             padding-top: 1.5rem; 
              align-items: center;
         }
         #chat-page-content {
@@ -172,14 +184,12 @@
             left: 0;
             right: 0;
             z-index: 800;
-            /* Adjust for bottom safe area if needed, e.g., for home bar */
             padding-bottom: calc(0.5rem + env(safe-area-inset-bottom, 0px));
         }
         #errorLogContainer {
             margin: 1rem;
             font-size: 0.8em;
-            /* Adjust padding if mainStatusFooter is fixed and taking space */
-            padding-bottom: calc(2rem + env(safe-area-inset-bottom, 0px)); /* if mainStatusFooter is fixed */
+            padding-bottom: calc(2rem + env(safe-area-inset-bottom, 0px)); 
         }
         #errorLog {
             max-height: 100px;
@@ -197,15 +207,14 @@
     </style>
 </head>
 <body>
-    <!-- Splash Screen -->
+
     <div id="splash-screen" class="page is-active">
         <h1 class="title">Difficult Conversations Simulator</h1>
         <p class="copyright">© Shariq Ali khan</p>
     </div>
 
-    <!-- Navigation Bar -->
     <nav id="app-navbar" class="navbar is-fixed-top is-dark is-hidden-completely" role="navigation" aria-label="main navigation">
-        <div class="container"> {/* Bulma's .container will now be within the safe-area padded navbar */}
+        <div class="container">
             <div class="navbar-brand">
                 <a class="navbar-item app-brand-link" href="#">
                     <span class="icon is-medium mr-2"><i class="fas fa-comments"></i></span>
@@ -367,7 +376,7 @@
 
     <script type="module">
         const PWA_SETUP = {
-            SW_VERSION_REFERENCE: 'v1.0.8', // Remember to update sw.js SW_VERSION too
+            SW_VERSION_REFERENCE: 'v1.0.8',
             APP_NAME: "Difficult Conversations Simulator",
             SHORT_NAME: "DiffConvSim",
             DESCRIPTION: "Practice difficult conversations with an AI simulator.",
