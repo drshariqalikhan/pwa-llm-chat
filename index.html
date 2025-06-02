@@ -410,10 +410,10 @@
             BACKGROUND_COLOR: "#1a1a1a", 
             START_URL: "./index.html",
 
-            createSvgDataUrl: function(svgString) { /* ... same ... */ 
+            createSvgDataUrl: function(svgString) { 
                 return `data:image/svg+xml;base64,${btoa(unescape(encodeURIComponent(svgString)))}`;
             },
-            generateIcons: function() { /* ... same ... */ 
+            generateIcons: function() { 
                 const iconSvgContent = `<path fill="currentColor" d="M20 2H4c-1.1 0-2 .9-2 2v18l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zm-2 12H6v-2h12v2zm0-3H6V9h12v2zm0-3H6V6h12v2z"/>`;
                 const iconSvgTemplate = (size, bgColor = this.THEME_COLOR, fgColor = "white") => `
                     <svg xmlns="http://www.w3.org/2000/svg" width="${size}" height="${size}" viewBox="0 0 24 24">
@@ -424,7 +424,7 @@
                 this.manifestIconUrl192 = this.createSvgDataUrl(iconSvgTemplate(192));
                 this.manifestIconUrl512 = this.createSvgDataUrl(iconSvgTemplate(512));
             },
-            setupManifest: function() { /* ... same ... */ 
+            setupManifest: function() { 
                 const manifest = {
                     name: this.APP_NAME, short_name: this.SHORT_NAME, description: this.DESCRIPTION,
                     start_url: this.START_URL, display: "standalone", background_color: this.BACKGROUND_COLOR,
@@ -440,19 +440,19 @@
                 linkManifest.rel = 'manifest'; linkManifest.href = manifestUrl;
                 document.head.appendChild(linkManifest);
             },
-            setupAppleTouchIcon: function() { /* ... same ... */ 
+            setupAppleTouchIcon: function() { 
                 const linkAppleIcon = document.createElement('link');
                 linkAppleIcon.rel = 'apple-touch-icon'; linkAppleIcon.href = this.appleTouchIconUrl;
                 document.head.appendChild(linkAppleIcon);
             },
-            registerServiceWorker: function() { /* ... same ... */ 
+            registerServiceWorker: function() { 
                 if ('serviceWorker' in navigator) {
                     navigator.serviceWorker.register('./sw.js')
                         .then(reg => console.log('Service Worker registered:', reg.scope))
                         .catch(err => console.error('Service Worker registration failed:', err));
                 }
             },
-            init: function() { /* ... same ... */ 
+            init: function() { 
                 try {
                     this.generateIcons(); this.setupManifest(); this.setupAppleTouchIcon(); this.registerServiceWorker();
                 } catch (e) { console.error("PWA Setup Error:", e); }
@@ -712,8 +712,7 @@
 
             if ('speechSynthesis' in window) {
                 try {
-                    window.speechSynthesis.cancel(); // Always cancel first
-                    // No explicit await here, cancel is synchronous.
+                    window.speechSynthesis.cancel();
                     
                     const utterance = new SpeechSynthesisUtterance(text);
                     utterance.lang = document.documentElement.lang || 'en-US';
@@ -995,16 +994,38 @@ Begin by presenting Option A and Option B.`;
             let accumulatedMessage = "";
             let animationFrameId;
             let cursorVisible = true;
-            const typingIndicator = () => { /* ... */ };
+            const typingIndicator = () => { 
+                 if (!sendButtonChat.classList.contains('is-loading')) { 
+                    updateLastBotMessageInUI(accumulatedMessage);
+                    if (animationFrameId) cancelAnimationFrame(animationFrameId);
+                    return;
+                }
+                updateLastBotMessageInUI(accumulatedMessage + (cursorVisible ? "▍" : ""));
+                cursorVisible = !cursorVisible;
+                animationFrameId = requestAnimationFrame(typingIndicator);
+            };
             animationFrameId = requestAnimationFrame(typingIndicator);
             try {
-                const requestBody = { /* ... */ };
+                const requestBody = {
+                    contents: [{ role: "user", parts: [{ text: "Let's begin the simulation. Please provide the initial options as per your instructions." }] }],
+                    systemInstruction: { parts: [{ text: currentSystemPrompt }] },
+                    generationConfig: { temperature: 0.7, topP: 0.95, maxOutputTokens: 2048 }
+                };
                 const apiUrl = `${GEMINI_API_BASE_URL}models/${currentGeminiModelName}:generateContent?key=${geminiApiKey}`;
-                const response = await fetch(apiUrl, { /* ... */ });
+                console.log("Sending initial message to:", apiUrl);
+
+                const response = await fetch(apiUrl, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(requestBody)
+                });
                 sendButtonChat.classList.remove('is-loading'); 
                 if (animationFrameId) cancelAnimationFrame(animationFrameId); 
 
-                if (!response.ok) { /* ... */ }
+                if (!response.ok) {
+                    const errorData = await response.json();
+                    throw new Error(`Gemini API Error (Initial): ${errorData.error?.message || response.statusText}`);
+                }
                 const data = await response.json();
                 if (data.candidates && data.candidates[0]?.content?.parts[0]?.text) {
                     accumulatedMessage = data.candidates[0].content.parts[0].text;
@@ -1017,7 +1038,9 @@ Begin by presenting Option A and Option B.`;
                     sendButtonChat.disabled = false;
                     userInputChat.placeholder = "Type your response...";
                     userInputChat.focus();
-                } else { /* ... */ }
+                } else {
+                    throw new Error("Invalid response structure from Gemini (Initial).");
+                }
             } catch (err) { 
                 if (animationFrameId) cancelAnimationFrame(animationFrameId);
                 sendButtonChat.classList.remove('is-loading');
@@ -1043,16 +1066,37 @@ Begin by presenting Option A and Option B.`;
             let accumulatedMessage = "";
             let animationFrameId;
             let cursorVisible = true;
-            const typingIndicator = () => { /* ... */ };
+            const typingIndicator = () => { 
+                if (!sendButtonChat.classList.contains('is-loading')) {
+                    updateLastBotMessageInUI(accumulatedMessage);
+                    if (animationFrameId) cancelAnimationFrame(animationFrameId);
+                    return;
+                }
+                updateLastBotMessageInUI(accumulatedMessage + (cursorVisible ? "▍" : ""));
+                cursorVisible = !cursorVisible;
+                animationFrameId = requestAnimationFrame(typingIndicator);
+            };
             animationFrameId = requestAnimationFrame(typingIndicator);
             try {
-                const requestBody = { /* ... */ };
+                const requestBody = {
+                    contents: geminiApiHistory, 
+                    systemInstruction: { parts: [{ text: currentSystemPrompt }] }, 
+                    generationConfig: { temperature: 0.7, topP: 0.95, maxOutputTokens: 2048 }
+                };
                 const apiUrl = `${GEMINI_API_BASE_URL}models/${currentGeminiModelName}:generateContent?key=${geminiApiKey}`;
-                const response = await fetch(apiUrl, { /* ... */ });
+                console.log("Sending message to:", apiUrl);
+
+                const response = await fetch(apiUrl, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(requestBody)
+                });
                 sendButtonChat.classList.remove('is-loading');
                 if (animationFrameId) cancelAnimationFrame(animationFrameId);
-
-                if (!response.ok) { /* ... */ }
+                if (!response.ok) {
+                    const errorData = await response.json();
+                    throw new Error(`Gemini API Error: ${errorData.error?.message || response.statusText}`);
+                }
                 const data = await response.json();
                 if (data.candidates && data.candidates[0]?.content?.parts[0]?.text) {
                     accumulatedMessage = data.candidates[0].content.parts[0].text;
@@ -1061,8 +1105,14 @@ Begin by presenting Option A and Option B.`;
                     
                     await speakText(accumulatedMessage, currentCharacterGender);
 
-                } else if (data.promptFeedback && data.promptFeedback.blockReason) { /* ... */ }
-                else { /* ... */ }
+                } else if (data.promptFeedback && data.promptFeedback.blockReason) { 
+                    accumulatedMessage = `Blocked by API: ${data.promptFeedback.blockReason}.`;
+                    logError("Gemini Response Blocked", accumulatedMessage);
+                    updateLastBotMessageInUI(accumulatedMessage);
+                }
+                else { 
+                    throw new Error("Invalid response structure from Gemini.");
+                }
             } catch (err) { 
                 if (animationFrameId) cancelAnimationFrame(animationFrameId);
                 sendButtonChat.classList.remove('is-loading');
@@ -1123,12 +1173,10 @@ Begin by presenting Option A and Option B.`;
                         console.log("TTS: Voices changed/loaded (onvoiceschanged event):", synthesisVoices.length);
                     }).catch(err => logError("VoicesChanged Event Error", err));
                 };
-                 // Initial attempt to get voices. Might be empty, onvoiceschanged will catch them later.
                 getVoicesPromise().then(voices => {
                     synthesisVoices = voices;
                     console.log("TTS: Voices initially available on app load:", synthesisVoices.length);
                 }).catch(err => {/* Can ignore error here, onvoiceschanged is the main loader */});
-
             }
 
             setTimeout(() => {
